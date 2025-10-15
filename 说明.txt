@@ -1,0 +1,187 @@
+
+
+需求：
+	开发一个自动化视频处理系统。该系统能够根据用户指令，智能地将多个输入视频进行片段提取、重新编排与合成，最终生成一个符合用户描述的全新连贯视频。
+
+
+核心处理流程：
+	flowchart TD
+    A[输入视频与用户描述] --> B(智能片段切割)
+    B --> C{判断是否穿插合并}
+    
+    C -- 是 --> D[执行穿插合并]
+    subgraph D [穿插合并逻辑]
+        D1[确定穿插顺序<br>（如: A1,B1,A2,B2）]
+        D2[按序组装片段列表]
+    end
+    
+    C -- 否 --> E[执行顺序拼接]
+    
+    D --> F(最终合成与输出)
+    E --> F
+    
+    subgraph F [最终合成与输出]
+        F1[添加转场效果]
+        F2[渲染导出完整视频]
+    end
+
+
+具体实现流程：
+
+	阶段一：智能片段切割
+		输入：原始视频集： Video_A.mp4, Video_B.mp4, ...
+		用户描述： 一段自然语言文本，用于定义每个视频中需要保留的片段。
+		示例： “从《视频A》里找出所有有人物微笑的片段；从《视频B》里找出所有有猫咪和日落出现的5秒片段。”
+
+		处理过程：
+
+			理解指令： 系统需要解析用户描述，为每个视频生成具体的、可操作的“剪切点”查找指令。
+
+			分析视频内容：
+				方式一（AI分析）： 调用AI模型（如视频理解、物体识别、场景分类、语音转文字、情绪分析等）来定位符合描述的时间点。
+				方式二（元数据/标记）： 读取视频已有的元数据、章节信息或用户手动添加的标记点。
+				方式三（时间码）： 用户直接提供精确的时间码（如 00:01:15-00:02:30）。
+
+			输出剪切点列表： 为每个视频生成一个结构化的列表。
+				Video_A: [ (00:00:05, 00:00:10), (00:01:20, 00:01:25), ... ]
+				Video_B: [ (00:00:30, 00:00:35), (00:02:15, 00:02:20), ... ]
+
+
+
+	阶段二：片段编排策略
+		输入： 第一阶段生成的所有视频片段。
+
+		处理过程：根据用户选择的“合并模式”，决定如何组装这些片段：
+		模式A：顺序拼接（默认）
+			描述： 先将Video_A的所有片段按原顺序拼接完整，再拼接Video_B的所有片段，以此类推。
+			输出序列： [A1, A2, A3, ..., B1, B2, B3, ...]
+
+		模式B：穿插合并
+			描述： 像洗牌一样，从每个视频中轮流取一个片段进行组装。
+			输出序列： [A1, B1, A2, B2, ...]
+
+		进阶设置：
+			穿插比例： 可设置每次从每个视频中取出的片段数量（例如，A取2个，B取1个，循环：A1, A2, B1, A3, A4, B2, ...）。
+			主视频： 指定一个视频为主视频，其片段优先或出现频率更高。
+
+
+	阶段三：最终合成与输出
+		输入： 第二阶段编排好的片段序列。
+
+		转场效果：
+
+			开关： 用户可选择是否添加转场。
+			类型： 提供常见的转场效果（如淡入淡出、划像、滑动、缩放等）。
+			时长： 可设置转场效果的持续时间（如0.5秒）。
+
+		渲染与编码：
+			将片段序列、转场效果合成为一个完整的、无缝的视频文件。
+
+			输出设置：
+				分辨率： 支持自定义（如1080p, 4K），或统一为第一个输入视频的分辨率。
+				帧率： 支持自定义（如30fps），或统一为某个输入视频的帧率。
+				格式/编码： 指定输出容器格式（如MP4）和视频编码（如H.264）。
+
+		最终输出：
+			生成一个完整的视频文件，并保存到指定路径。
+
+
+
+
+技术实现：
+	通过基于langchain+langraph的智能体编排实现，可以拆分为交互、寻找剪切点、裁剪、排序、合并、调整等多个智能体协作
+	
+	智能体角色定义：
+		1、OrchestratorAgent (编排协调器)
+			class OrchestratorAgent:
+			def __init__(self):
+				self.role = "流程编排和任务分发"
+				self.capabilities = [
+					"解析用户复杂需求",
+					"制定处理策略", 
+					"协调其他智能体工作",
+					"错误处理和重试机制"
+				]
+		2、ContentAnalyzerAgent (内容分析器)
+			class ContentAnalyzerAgent:
+				def __init__(self):
+					self.tools = {
+						"scene_detection": SceneDetectionTool(),
+						"object_detection": ObjectDetectionTool(),
+						"emotion_analysis": EmotionAnalysisTool(),
+						"speech_to_text": SpeechToTextTool(),
+						"metadata_reader": MetadataReaderTool()
+					}
+		3、VideoEditorAgent (视频编辑器)
+			class VideoEditorAgent:
+				def __init__(self):
+					self.tools = {
+						"clip_extractor": ClipExtractionTool(),
+						"sequence_planner": SequencePlanningTool(),
+						"transition_applier": TransitionApplicationTool(),
+						"video_renderer": VideoRenderingTool()
+					}
+		4、QualityValidatorAgent (质量验证器)
+			class QualityValidatorAgent:
+				def __init__(self):
+					self.checks = [
+						"片段连续性检查",
+						"时间线合理性验证",
+						"输出质量评估",
+						"用户需求符合度检查"
+					]
+	
+	状态定义：
+		class GraphState(TypedDict):
+			# 输入
+			videos: List[str]                    # 输入视频路径列表
+			user_query: str                     # 用户描述
+			config: dict                        # 处理配置
+			
+			# 处理中间状态
+			analysis_results: dict              # 视频分析结果
+			clip_points: dict                   # 剪切点规划
+			sequence_plan: List                 # 片段序列计划
+			editing_actions: List               # 编辑动作序列
+			
+			# 输出和控制
+			final_video_path: str               # 最终输出路径
+			current_agent: str                  # 当前执行智能体
+			next_agent: str                     # 下一个智能体
+			error: str                          # 错误信息
+			validation_passed: bool             # 验证结果
+
+
+	智能体协作策略：
+		graph TD
+		A[用户输入] --> B[OrchestratorAgent]
+		B --> C[解析需求制定策略]
+		C --> D[ContentAnalyzerAgent]
+		D --> E[视频内容分析]
+		E --> F[ClipPlannerAgent]
+		F --> G[剪切点规划]
+		G --> H[SequenceDesignerAgent]
+		H --> I[片段编排策略]
+		I --> J[VideoEditorAgent]
+		J --> K[视频合成处理]
+		K --> L[QualityValidatorAgent]
+		L --> M{质量验证}
+		M -->|通过| N[输出最终视频]
+		M -->|失败| O[ErrorHandler]
+		O --> B
+	
+	
+	
+
+可视化界面：
+		
+	使用flask 模板，构建一个交互页面，支持用户上传视频和文本交互，结果下载等
+
+
+
+要求：
+	1、功能都根据已创建的目录放，核心功能都放到  hengline 目录下
+	2、日志都使用 hengline.logger
+	3、其他目录和文件放到指定位置，你可优化文件
+	
+	

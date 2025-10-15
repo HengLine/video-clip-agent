@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#10b981',
+                        accent: '#8b5cf6',
+                        dark: '#1e293b',
+                        light: '#f8fafc'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .card-hover {
+                @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+            }
+            .btn-primary {
+                @apply bg-primary text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:bg-primary/90 hover:shadow-md active:scale-95;
+            }
+            .btn-secondary {
+                @apply bg-secondary text-white px-6 py-3 rounded-lg font-semibold transition-all duration-300 hover:bg-secondary/90 hover:shadow-md active:scale-95;
+            }
+            .input-file {
+                @apply border-2 border-dashed border-gray-300 rounded-lg p-8 text-center transition-all duration-300 hover:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50;
+            }
+            .progress-bar {
+                @apply h-2 bg-gray-200 rounded-full overflow-hidden;
+            }
+            .progress-fill {
+                @apply h-full bg-primary transition-all duration-500 ease-out;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+    <!-- 导航栏 -->
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa fa-video-camera text-primary text-2xl"></i>
+                <h1 class="text-xl font-bold text-dark">视频工具智能体</h1>
+                <span class="text-xs bg-accent text-white px-2 py-1 rounded-full">v{{ version }}</span>
+            </div>
+            <nav class="hidden md:flex space-x-6">
+                <a href="#features" class="text-gray-600 hover:text-primary transition-colors">功能特性</a>
+                <a href="#how-it-works" class="text-gray-600 hover:text-primary transition-colors">工作原理</a>
+                <a href="/api" class="text-gray-600 hover:text-primary transition-colors">API文档</a>
+            </nav>
+            <div class="md:hidden">
+                <button class="text-gray-600 hover:text-primary transition-colors">
+                    <i class="fa fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow">
+        <!-- 英雄区域 -->
+        <section class="bg-gradient-to-br from-primary/10 to-accent/10 py-16 md:py-24">
+            <div class="container mx-auto px-4 text-center">
+                <h2 class="text-[clamp(2rem,5vw,3.5rem)] font-bold text-dark mb-6 leading-tight text-shadow">
+                    智能视频内容处理助手
+                </h2>
+                <p class="text-[clamp(1rem,2vw,1.25rem)] text-gray-600 max-w-3xl mx-auto mb-8">
+                    上传您的视频，告诉我们您需要什么，让AI智能体自动为您分析内容、剪辑视频并生成高质量的结果。
+                </p>
+                <a href="#upload-section" class="btn-primary inline-flex items-center space-x-2">
+                    <span>开始使用</span>
+                    <i class="fa fa-arrow-down"></i>
+                </a>
+            </div>
+        </section>
+
+        <!-- 上传区域 -->
+        <section id="upload-section" class="py-16 bg-white">
+            <div class="container mx-auto px-4">
+                <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-xl overflow-hidden">
+                    <div class="p-8">
+                        <h3 class="text-2xl font-bold text-dark mb-6 text-center">上传视频并输入处理需求</h3>
+                        
+                        <form id="upload-form" enctype="multipart/form-data" class="space-y-6">
+                            <!-- 文件上传区域 -->
+                            <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center transition-all duration-300 hover:border-primary/50 hover:bg-primary/5" id="drop-area">
+                                <input type="file" id="file-input" accept=".mp4,.avi,.mov,.mkv" multiple class="hidden" />
+                                <label for="file-input" class="cursor-pointer">
+                                    <i class="fa fa-cloud-upload text-5xl text-primary mb-4"></i>
+                                    <p class="text-lg text-gray-600 mb-2">拖拽视频文件到此处，或点击选择文件</p>
+                                    <p class="text-sm text-gray-500">支持 MP4, AVI, MOV, MKV 格式</p>
+                                </label>
+                                <div id="file-list" class="mt-4 space-y-2 hidden"></div>
+                            </div>
+
+                            <!-- 查询输入 -->
+                            <div>
+                                <label for="query" class="block text-gray-700 font-medium mb-2">请描述您的视频处理需求</label>
+                                <textarea 
+                                    id="query" 
+                                    name="query" 
+                                    rows="3" 
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary resize-none"
+                                    placeholder="例如：提取所有包含猫的片段并按时间顺序排列，或剪辑视频中的精彩瞬间..."
+                                ></textarea>
+                                <p class="text-xs text-gray-500 mt-1">详细的描述将帮助我们生成更准确的结果</p>
+                            </div>
+
+                            <!-- 提交按钮 -->
+                            <div class="text-center">
+                                <button type="submit" class="btn-primary inline-flex items-center space-x-2">
+                                    <i class="fa fa-magic"></i>
+                                    <span>开始处理</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- 处理进度 -->
+                    <div id="progress-section" class="p-8 border-t border-gray-200 hidden">
+                        <h4 class="text-lg font-semibold text-dark mb-4">处理进度</h4>
+                        <div class="progress-bar mb-2">
+                            <div id="progress-fill" class="progress-fill" style="width: 0%"></div>
+                        </div>
+                        <div class="flex justify-between text-sm text-gray-600 mb-4">
+                            <span id="progress-text">准备中...</span>
+                            <span id="progress-percent">0%</span>
+                        </div>
+                        <div id="process-steps" class="space-y-2">
+                            <div class="flex items-center">
+                                <div class="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs mr-3">1</div>
+                                <div class="text-gray-500">正在解析请求...</div>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs mr-3">2</div>
+                                <div class="text-gray-500">正在分析视频内容...</div>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs mr-3">3</div>
+                                <div class="text-gray-500">正在编辑视频...</div>
+                            </div>
+                            <div class="flex items-center">
+                                <div class="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-xs mr-3">4</div>
+                                <div class="text-gray-500">正在验证视频质量...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 结果展示 -->
+                    <div id="result-section" class="p-8 border-t border-gray-200 hidden">
+                        <h4 class="text-lg font-semibold text-dark mb-4">处理结果</h4>
+                        <div id="result-content">
+                            <!-- 结果将在这里动态插入 -->
+                        </div>
+                        <div class="mt-6 text-center">
+                            <button id="new-process-btn" class="btn-secondary inline-flex items-center space-x-2">
+                                <i class="fa fa-refresh"></i>
+                                <span>开始新的处理</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 功能特性 -->
+        <section id="features" class="py-16 bg-gray-50">
+            <div class="container mx-auto px-4">
+                <h3 class="text-3xl font-bold text-center text-dark mb-12">核心功能</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    {% for feature in features %}
+                    <div class="bg-white rounded-xl shadow-md p-6 card-hover">
+                        <div class="text-primary text-3xl mb-4">
+                            <i class="fa fa-{{ 'file-video-o' if loop.index == 1 else 'eye' if loop.index == 2 else 'check-circle' }}"></i>
+                        </div>
+                        <h4 class="text-xl font-semibold text-dark mb-3">{{ feature }}</h4>
+                        <p class="text-gray-600">
+                            {% if loop.index == 1 %}
+                            自动分析视频内容，识别场景、物体和动作，为后续编辑提供精准依据。
+                            {% elif loop.index == 2 %}
+                            根据您的需求智能剪辑视频，提取关键片段，优化转场效果，打造专业级作品。
+                            {% else %}
+                            全方位验证输出视频的质量、连续性和内容符合度，确保最终成果满足您的期望。
+                            {% endif %}
+                        </p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+
+        <!-- 工作原理 -->
+        <section id="how-it-works" class="py-16 bg-white">
+            <div class="container mx-auto px-4">
+                <h3 class="text-3xl font-bold text-center text-dark mb-4">工作原理</h3>
+                <p class="text-gray-600 text-center max-w-2xl mx-auto mb-12">我们采用智能体协作架构，通过多个专业智能体协同工作，为您提供高质量的视频处理服务</p>
+                
+                <div class="relative">
+                    <!-- 连接线 -->
+                    <div class="hidden md:block absolute left-1/2 top-0 bottom-0 w-0.5 bg-gray-200 transform -translate-x-1/2"></div>
+                    
+                    <div class="space-y-12">
+                        <div class="flex flex-col md:flex-row items-center">
+                            <div class="md:w-1/2 md:pr-12 md:text-right mb-6 md:mb-0">
+                                <h4 class="text-xl font-semibold text-dark mb-2">编排器智能体</h4>
+                                <p class="text-gray-600">解析您的需求，制定处理策略，协调其他智能体的工作流程。</p>
+                            </div>
+                            <div class="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-white text-2xl z-10">
+                                <i class="fa fa-cogs"></i>
+                            </div>
+                            <div class="md:w-1/2 md:pl-12 hidden md:block"></div>
+                        </div>
+                        
+                        <div class="flex flex-col md:flex-row items-center">
+                            <div class="md:w-1/2 md:pr-12 hidden md:block"></div>
+                            <div class="w-16 h-16 rounded-full bg-secondary flex items-center justify-center text-white text-2xl z-10">
+                                <i class="fa fa-search"></i>
+                            </div>
+                            <div class="md:w-1/2 md:pl-12 md:text-left mb-6 md:mb-0">
+                                <h4 class="text-xl font-semibold text-dark mb-2">内容分析智能体</h4>
+                                <p class="text-gray-600">深入分析视频内容，识别关键元素，生成最佳剪切点。</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex flex-col md:flex-row items-center">
+                            <div class="md:w-1/2 md:pr-12 md:text-right mb-6 md:mb-0">
+                                <h4 class="text-xl font-semibold text-dark mb-2">视频编辑智能体</h4>
+                                <p class="text-gray-600">精确剪辑视频片段，规划序列，应用转场效果，渲染最终作品。</p>
+                            </div>
+                            <div class="w-16 h-16 rounded-full bg-accent flex items-center justify-center text-white text-2xl z-10">
+                                <i class="fa fa-film"></i>
+                            </div>
+                            <div class="md:w-1/2 md:pl-12 hidden md:block"></div>
+                        </div>
+                        
+                        <div class="flex flex-col md:flex-row items-center">
+                            <div class="md:w-1/2 md:pr-12 hidden md:block"></div>
+                            <div class="w-16 h-16 rounded-full bg-pink-500 flex items-center justify-center text-white text-2xl z-10">
+                                <i class="fa fa-check"></i>
+                            </div>
+                            <div class="md:w-1/2 md:pl-12 md:text-left mb-6 md:mb-0">
+                                <h4 class="text-xl font-semibold text-dark mb-2">质量验证智能体</h4>
+                                <p class="text-gray-600">全面检查视频质量，确保内容符合度和观看体验。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-dark text-white py-8">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <div class="flex items-center space-x-2">
+                        <i class="fa fa-video-camera text-primary text-xl"></i>
+                        <span class="font-bold text-lg">视频工具智能体</span>
+                    </div>
+                    <p class="text-gray-400 text-sm mt-2">智能、高效的视频处理解决方案</p>
+                </div>
+                <div class="flex space-x-6">
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                        <i class="fa fa-github text-xl"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                        <i class="fa fa-twitter text-xl"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                        <i class="fa fa-envelope text-xl"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-6 pt-6 text-center text-gray-500 text-sm">
+                <p>&copy; 2025 视频工具智能体 | 版本 {{ version }}</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadForm = document.getElementById('upload-form');
+            const dropArea = document.getElementById('drop-area');
+            const fileInput = document.getElementById('file-input');
+            const fileList = document.getElementById('file-list');
+            const progressSection = document.getElementById('progress-section');
+            const resultSection = document.getElementById('result-section');
+            const progressFill = document.getElementById('progress-fill');
+            const progressText = document.getElementById('progress-text');
+            const progressPercent = document.getElementById('progress-percent');
+            const processSteps = document.getElementById('process-steps').children;
+            const resultContent = document.getElementById('result-content');
+            const newProcessBtn = document.getElementById('new-process-btn');
+
+            // 拖拽上传功能
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight() {
+                dropArea.classList.add('bg-primary/10', 'border-primary');
+            }
+
+            function unhighlight() {
+                dropArea.classList.remove('bg-primary/10', 'border-primary');
+            }
+
+            dropArea.addEventListener('drop', handleDrop, false);
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                handleFiles(files);
+            }
+
+            fileInput.addEventListener('change', function() {
+                handleFiles(this.files);
+            });
+
+            function handleFiles(files) {
+                if (files.length > 0) {
+                    fileList.innerHTML = '';
+                    fileList.classList.remove('hidden');
+                    
+                    Array.from(files).forEach(file => {
+                        const allowedTypes = ['video/mp4', 'video/avi', 'video/quicktime', 'video/x-matroska'];
+                        const isVideo = allowedTypes.includes(file.type);
+                        
+                        if (isVideo) {
+                            const fileItem = document.createElement('div');
+                            fileItem.className = 'flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200';
+                            fileItem.innerHTML = `
+                                <div class="flex items-center">
+                                    <i class="fa fa-file-video-o text-primary mr-3"></i>
+                                    <span class="text-sm truncate max-w-xs">${file.name}</span>
+                                </div>
+                                <span class="text-xs text-gray-500">${(file.size / (1024 * 1024)).toFixed(2)} MB</span>
+                            `;
+                            fileList.appendChild(fileItem);
+                        }
+                    });
+                }
+            }
+
+            // 表单提交处理
+            uploadForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const query = document.getElementById('query').value.trim();
+                const files = fileInput.files;
+                
+                if (!query) {
+                    alert('请描述您的视频处理需求');
+                    return;
+                }
+                
+                if (files.length === 0) {
+                    alert('请上传至少一个视频文件');
+                    return;
+                }
+                
+                // 显示进度区域
+                uploadForm.classList.add('hidden');
+                progressSection.classList.remove('hidden');
+                
+                // 创建FormData对象
+                const formData = new FormData();
+                formData.append('query', query);
+                
+                Array.from(files).forEach(file => {
+                    formData.append('files[]', file);
+                });
+                
+                // 模拟进度更新
+                updateProgress(0, '准备中...');
+                
+                // 发送请求
+                const xhr = new XMLHttpRequest();
+                
+                xhr.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        const percentComplete = (e.loaded / e.total) * 30; // 上传占30%
+                        updateProgress(percentComplete, '正在上传文件...');
+                    }
+                });
+                
+                xhr.addEventListener('readystatechange', function() {
+                    if (xhr.readyState === 4) {
+                        if (xhr.status === 200) {
+                            const response = JSON.parse(xhr.responseText);
+                            handleSuccess(response);
+                        } else {
+                            handleError('处理失败，请稍后重试');
+                        }
+                    }
+                });
+                
+                xhr.open('POST', '/api/process-video');
+                
+                // 模拟处理进度
+                setTimeout(() => updateProgress(40, '正在解析请求...'), 1000);
+                setTimeout(() => {
+                    updateProgress(55, '正在分析视频内容...');
+                    updateStep(1);
+                }, 3000);
+                setTimeout(() => {
+                    updateProgress(75, '正在编辑视频...');
+                    updateStep(2);
+                }, 6000);
+                setTimeout(() => {
+                    updateProgress(90, '正在验证视频质量...');
+                    updateStep(3);
+                }, 9000);
+                
+                xhr.send(formData);
+            });
+            
+            // 更新进度
+            function updateProgress(percent, text) {
+                progressFill.style.width = `${percent}%`;
+                progressText.textContent = text;
+                progressPercent.textContent = `${Math.round(percent)}%`;
+            }
+            
+            // 更新步骤状态
+            function updateStep(stepIndex) {
+                for (let i = 0; i < processSteps.length; i++) {
+                    const step = processSteps[i];
+                    const icon = step.querySelector('div');
+                    const text = step.querySelector('div:last-child');
+                    
+                    if (i <= stepIndex) {
+                        icon.classList.remove('bg-gray-200');
+                        icon.classList.add('bg-green-500');
+                        icon.innerHTML = '<i class="fa fa-check"></i>';
+                        text.classList.remove('text-gray-500');
+                        text.classList.add('text-green-600');
+                    }
+                }
+            }
+            
+            // 处理成功响应
+            function handleSuccess(response) {
+                updateProgress(100, '处理完成！');
+                updateStep(3);
+                
+                setTimeout(() => {
+                    progressSection.classList.add('hidden');
+                    resultSection.classList.remove('hidden');
+                    
+                    if (response.status === 'success' && response.video_url) {
+                        resultContent.innerHTML = `
+                            <div class="text-center">
+                                <div class="text-green-500 text-xl mb-4">
+                                    <i class="fa fa-check-circle"></i>
+                                </div>
+                                <h5 class="text-lg font-semibold text-dark mb-2">视频处理成功！</h5>
+                                <p class="text-gray-600 mb-6">您的视频已准备就绪，请点击下方按钮下载或在线预览。</p>
+                                
+                                <div class="mb-8">
+                                    <video width="100%" controls class="rounded-lg shadow-md">
+                                        <source src="${response.video_url}" type="video/mp4">
+                                        您的浏览器不支持视频播放。
+                                    </video>
+                                </div>
+                                
+                                <a href="${response.video_url}" download class="btn-secondary inline-flex items-center space-x-2">
+                                    <i class="fa fa-download"></i>
+                                    <span>下载视频</span>
+                                </a>
+                            </div>
+                        `;
+                    } else {
+                        resultContent.innerHTML = `
+                            <div class="text-center">
+                                <div class="text-red-500 text-xl mb-4">
+                                    <i class="fa fa-times-circle"></i>
+                                </div>
+                                <h5 class="text-lg font-semibold text-dark mb-2">处理失败</h5>
+                                <p class="text-gray-600">${response.message || '未知错误'}</p>
+                            </div>
+                        `;
+                    }
+                }, 1000);
+            }
+            
+            // 处理错误
+            function handleError(message) {
+                updateProgress(100, '处理失败');
+                
+                setTimeout(() => {
+                    progressSection.classList.add('hidden');
+                    resultSection.classList.remove('hidden');
+                    
+                    resultContent.innerHTML = `
+                        <div class="text-center">
+                            <div class="text-red-500 text-xl mb-4">
+                                <i class="fa fa-times-circle"></i>
+                            </div>
+                            <h5 class="text-lg font-semibold text-dark mb-2">处理失败</h5>
+                            <p class="text-gray-600">${message}</p>
+                        </div>
+                    `;
+                }, 500);
+            }
+            
+            // 开始新的处理
+            newProcessBtn.addEventListener('click', function() {
+                resultSection.classList.add('hidden');
+                uploadForm.classList.remove('hidden');
+                fileInput.value = '';
+                fileList.classList.add('hidden');
+                document.getElementById('query').value = '';
+                
+                // 重置进度
+                updateProgress(0, '准备中...');
+                for (let i = 0; i < processSteps.length; i++) {
+                    const step = processSteps[i];
+                    const icon = step.querySelector('div');
+                    const text = step.querySelector('div:last-child');
+                    
+                    icon.classList.remove('bg-green-500');
+                    icon.classList.add('bg-gray-200');
+                    icon.textContent = i + 1;
+                    text.classList.remove('text-green-600');
+                    text.classList.add('text-gray-500');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

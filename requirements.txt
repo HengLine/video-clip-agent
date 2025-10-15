@@ -1,0 +1,16 @@
+langchain==0.3.27
+langgraph==0.6.10
+flask
+flask-cors
+werkzeug
+transformers
+torch
+opencv-python
+numpy
+scikit-learn
+pandas
+moviepy
+pydub
+ffmpeg-python
+colorama
+python-dotenv
