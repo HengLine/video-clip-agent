@@ -21,10 +21,8 @@ import time
 from abc import abstractmethod
 from typing import final
 
-from flask import json
-
 from hengline.logger import debug, info, warning, error
-from hengline.utils.env_utils import print_large_ascii
+from utils.env_utils import print_large_ascii
 
 # 获取当前脚本所在目录（项目根目录的绝对路径）
 # PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -220,7 +218,7 @@ class AppBaseEnv:
             return False
 
         try:
-            info("================HengLine AIGC====================")
+            info("================HengLine 视频混剪====================")
             info("应用启动中，请不要关闭此窗口。如果需要停止应用，请按 Ctrl+C")
 
             # 启动应用
@@ -288,7 +286,7 @@ class AppBaseEnv:
         """主函数 - 协调整个启动流程"""
         print_large_ascii()
         info("==================================================================")
-        info("                   欢迎使用 HengLine AIGC 创意平台                   ")
+        info("                   欢迎使用 HengLine 视频工具智能体                   ")
         info("==================================================================")
         debug(f"当前工作目录: {os.getcwd()}")
         debug(f"项目根目录: {PROJECT_ROOT}")
@@ -323,7 +321,7 @@ class AppBaseEnv:
         # 步骤5: 启动
         self.start_aigc_application(max_retries)
 
-        info("===============HengLine AIGC=====================")
+        info("===============HengLine 视频工具智能体=====================")
         info("应用程序已停止运行。按Enter键退出...")
 
     """    需要子类实现的抽象方法，用于启动具体的应用"""

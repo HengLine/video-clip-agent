@@ -164,7 +164,7 @@ class Logger:
         
         try:
             # 延迟导入以避免循环依赖
-            from hengline.utils.config_utils import get_settings_config
+            from config.config_utils import get_settings_config
             
             # 获取日志配置
             settings_config = get_settings_config()
@@ -207,7 +207,7 @@ class Logger:
         
         try:
             # 获取配置以设置处理器级别
-            from hengline.utils.config_utils import get_settings_config
+            from config.config_utils import get_settings_config
             settings_config = get_settings_config()
             logging_config = settings_config.get('logging', {})
             
@@ -248,7 +248,7 @@ class Logger:
         
         try:
             # 设置文件处理器级别
-            from hengline.utils.config_utils import get_settings_config
+            from config.config_utils import get_settings_config
             settings_config = get_settings_config()
             logging_config = settings_config.get('logging', {})
             

@@ -30,7 +30,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 sys.stderr.reconfigure(encoding='utf-8')
 
 # 全局变量 - 明确指定虚拟环境为当前目录下的venv
-APP_FILE = os.path.join(PROJECT_ROOT, "hengline", "app_flask.py")  # 修复后的应用文件路径
+APP_FILE = os.path.join(PROJECT_ROOT, "hengline", "flask", "app_flask.py")  # 修复后的应用文件路径
 
 
 class FlaskApp(AppBaseEnv):

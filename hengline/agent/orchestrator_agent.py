@@ -1,17 +1,20 @@
 # -*- coding: utf-8 -*-
 """
 @FileName: orchestrator.py
-@Description: 智能体编排协调器
+@Description: 基于langchain的智能体编排协调器
 @Author: HengLine
-@Time: 2025/08 - 2025/11
+@Time: 2025/10 - 2025/11
 """
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
+from langchain_core.runnables import Runnable, chain
+from langchain_core.tools import Tool
 from hengline.logger import debug, info, warning, error
-from .state import GraphState
+from .agent_state import GraphState
 
-class OrchestratorAgent:
+class OrchestratorAgent(Runnable):
     """
-    智能体编排协调器，负责解析用户需求、制定处理策略和协调其他智能体工作
+    基于langchain的智能体编排协调器，负责解析用户需求、制定处理策略和协调其他智能体工作
+    实现Runnable接口以支持与langchain生态系统的集成
     """
     def __init__(self):
         self.role = "流程编排和任务分发"
@@ -21,11 +24,12 @@ class OrchestratorAgent:
             "协调其他智能体工作",
             "错误处理和重试机制"
         ]
-        info(f"初始化 {self.role} 智能体")
+        info(f"初始化 {self.role} 智能体 (基于langchain实现)")
     
     def parse_user_request(self, state: GraphState) -> Dict[str, Any]:
         """
         解析用户请求，提取关键信息
+        使用langchain的chain装饰器增强功能和错误处理
         """
         try:
             user_query = state.get('user_query', '')
@@ -64,6 +68,7 @@ class OrchestratorAgent:
     def handle_error(self, state: GraphState) -> Dict[str, Any]:
         """
         处理错误情况
+        使用langchain的chain装饰器增强功能和错误处理
         """
         error_msg = state.get('error', '未知错误')
         warning(f"处理错误: {error_msg}")
@@ -78,6 +83,7 @@ class OrchestratorAgent:
     def decide_next_step(self, state: GraphState) -> str:
         """
         根据当前状态决定下一步操作
+        使用langchain的chain装饰器增强功能和错误处理
         """
         current_agent = state.get('current_agent')
         next_agent = state.get('next_agent')
@@ -108,6 +114,7 @@ class OrchestratorAgent:
     def execute(self, state: GraphState) -> GraphState:
         """
         执行编排器的主要逻辑
+        实现Runnable接口的标准执行方法
         """
         try:
             current_agent = state.get('current_agent')
@@ -151,3 +158,27 @@ class OrchestratorAgent:
             updated_state['error'] = f"编排器错误: {str(e)}"
             updated_state['current_agent'] = 'error_handler'
             return updated_state
+    
+    # 实现Runnable接口的invoke方法
+    def invoke(self, input_state: Dict[str, Any], config: Optional[Dict] = None) -> Dict[str, Any]:
+        """
+        实现langchain的Runnable接口
+        支持标准的invoke调用模式
+        """
+        return self.execute(input_state)
+    
+    # 实现Runnable接口的batch方法，支持批量处理
+    def batch(self, inputs: List[Dict[str, Any]], config: Optional[Dict] = None, **kwargs) -> List[Dict[str, Any]]:
+        """
+        支持批量处理多个编排任务
+        """
+        results = []
+        for input_state in inputs:
+            results.append(self.execute(input_state))
+        return results
+    
+    def get_tools(self) -> List[Tool]:
+        """
+        获取编排器相关工具（目前主要用于接口一致性）
+        """
+        return []

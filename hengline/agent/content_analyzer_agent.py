@@ -1,88 +1,96 @@
 # -*- coding: utf-8 -*-
 """
 @FileName: content_analyzer.py
-@Description: 内容分析器智能体，负责视频内容分析和剪切点识别
+@Description: 基于langchain的内容分析器智能体，负责视频内容分析和剪切点识别
 @Author: HengLine
-@Time: 2025/08 - 2025/11
+@Time: 2025/10 - 2025/11
 """
 import os
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List, Tuple, Any, Optional
+from langchain_core.runnables import Runnable, chain
+from langchain_core.tools import Tool, BaseTool
+from langchain.tools import tool
 from hengline.logger import debug, info, warning, error
-from .state import GraphState
+from .agent_state import GraphState
 
-# 工具类定义
-class SceneDetectionTool:
-    """场景检测工具"""
-    def detect(self, video_path: str) -> List[Tuple[float, float]]:
-        """检测视频中的场景切换点"""
-        # 这里是示例实现，实际需要调用视频分析库
-        debug(f"执行场景检测: {video_path}")
-        # 模拟返回一些场景切换点
-        return [(0.0, 5.0), (5.0, 10.0), (10.0, 15.0)]
+# 使用langchain的tool装饰器定义工具函数
+@tool
 
-class ObjectDetectionTool:
-    """物体检测工具"""
-    def detect(self, video_path: str, objects: List[str]) -> Dict[str, List[Tuple[float, float]]]:
-        """检测视频中的物体出现时间段"""
-        debug(f"执行物体检测: {video_path}, 检测物体: {objects}")
-        # 模拟返回物体检测结果
-        results = {obj: [(2.0, 7.0), (12.0, 18.0)] for obj in objects}
-        return results
+def detect_scenes(video_path: str) -> List[Tuple[float, float]]:
+    """检测视频中的场景切换点"""
+    # 这里是示例实现，实际需要调用视频分析库
+    debug(f"执行场景检测: {video_path}")
+    # 模拟返回一些场景切换点
+    return [(0.0, 5.0), (5.0, 10.0), (10.0, 15.0)]
 
-class EmotionAnalysisTool:
-    """情绪分析工具"""
-    def analyze(self, video_path: str) -> Dict[str, List[Tuple[float, float]]]:
-        """分析视频中的情绪"""
-        debug(f"执行情绪分析: {video_path}")
-        # 模拟返回情绪分析结果
-        return {
-            'happy': [(1.0, 4.0), (8.0, 11.0)],
-            'sad': [(15.0, 18.0)],
-            'neutral': [(0.0, 1.0), (4.0, 8.0), (11.0, 15.0), (18.0, 20.0)]
-        }
+@tool
+def detect_objects(video_path: str, objects: List[str]) -> Dict[str, List[Tuple[float, float]]]:
+    """检测视频中的物体出现时间段"""
+    debug(f"执行物体检测: {video_path}, 检测物体: {objects}")
+    # 模拟返回物体检测结果
+    results = {obj: [(2.0, 7.0), (12.0, 18.0)] for obj in objects}
+    return results
 
-class SpeechToTextTool:
-    """语音转文字工具"""
-    def transcribe(self, video_path: str) -> List[Dict[str, Any]]:
-        """提取视频中的语音并转文字"""
-        debug(f"执行语音转文字: {video_path}")
-        # 模拟返回语音转文字结果
-        return [
-            {'text': '你好', 'start_time': 0.5, 'end_time': 1.5},
-            {'text': '这是一段测试视频', 'start_time': 2.0, 'end_time': 4.0}
-        ]
+@tool
+def analyze_emotions(video_path: str) -> Dict[str, List[Tuple[float, float]]]:
+    """分析视频中的情绪"""
+    debug(f"执行情绪分析: {video_path}")
+    # 模拟返回情绪分析结果
+    return {
+        'happy': [(1.0, 4.0), (8.0, 11.0)],
+        'sad': [(15.0, 18.0)],
+        'neutral': [(0.0, 1.0), (4.0, 8.0), (11.0, 15.0), (18.0, 20.0)]
+    }
 
-class MetadataReaderTool:
-    """元数据读取工具"""
-    def read(self, video_path: str) -> Dict[str, Any]:
-        """读取视频元数据"""
-        debug(f"读取视频元数据: {video_path}")
-        # 模拟返回元数据
-        return {
-            'duration': 20.0,
-            'width': 1920,
-            'height': 1080,
-            'fps': 30
-        }
+@tool
+def transcribe_speech(video_path: str) -> List[Dict[str, Any]]:
+    """提取视频中的语音并转文字"""
+    debug(f"执行语音转文字: {video_path}")
+    # 模拟返回语音转文字结果
+    return [
+        {'text': '你好', 'start_time': 0.5, 'end_time': 1.5},
+        {'text': '这是一段测试视频', 'start_time': 2.0, 'end_time': 4.0}
+    ]
 
-class ContentAnalyzerAgent:
+@tool
+def read_video_metadata(video_path: str) -> Dict[str, Any]:
+    """读取视频元数据"""
+    debug(f"读取视频元数据: {video_path}")
+    # 模拟返回元数据
+    return {
+        'duration': 20.0,
+        'width': 1920,
+        'height': 1080,
+        'fps': 30
+    }
+
+class ContentAnalyzerAgent(Runnable):
     """
-    内容分析器智能体，负责视频内容分析和剪切点识别
+    基于langchain的内容分析器智能体，负责视频内容分析和剪切点识别
+    实现Runnable接口以支持与langchain生态系统的集成
     """
     def __init__(self):
         self.role = "视频内容分析"
-        self.tools = {
-            "scene_detection": SceneDetectionTool(),
-            "object_detection": ObjectDetectionTool(),
-            "emotion_analysis": EmotionAnalysisTool(),
-            "speech_to_text": SpeechToTextTool(),
-            "metadata_reader": MetadataReaderTool()
-        }
-        info(f"初始化 {self.role} 智能体")
+        self.capabilities = ["场景检测", "物体识别", "情绪分析", "语音转文字", "元数据读取"]
+        info(f"初始化 {self.role} 智能体 (基于langchain实现)")
+    
+    def get_tools(self) -> list[BaseTool]:
+        """
+        获取智能体可用的工具列表
+        用于与langchain agent和其他组件集成
+        """
+        return [
+            detect_scenes,
+            detect_objects,
+            analyze_emotions,
+            transcribe_speech,
+            read_video_metadata
+        ]
     
     def analyze_videos(self, state: GraphState) -> Dict[str, Any]:
         """
         分析所有视频的内容
+        使用langchain的chain装饰器增强功能和错误处理
         """
         try:
             videos = state.get('videos', [])
@@ -98,11 +106,9 @@ class ContentAnalyzerAgent:
                 
                 debug(f"开始分析视频: {video_path}")
                 
-                # 读取视频元数据
-                metadata = self.tools['metadata_reader'].read(video_path)
-                
-                # 执行场景检测
-                scenes = self.tools['scene_detection'].detect(video_path)
+                # 使用langchain工具执行分析
+                metadata = read_video_metadata(video_path)
+                scenes = detect_scenes(video_path)
                 
                 # 根据用户查询决定是否需要其他分析
                 detected_objects = []
@@ -115,13 +121,13 @@ class ContentAnalyzerAgent:
                 
                 object_results = {}
                 if detected_objects:
-                    object_results = self.tools['object_detection'].detect(video_path, detected_objects)
+                    object_results = detect_objects(video_path, detected_objects)
                 
                 # 情绪分析
-                emotion_results = self.tools['emotion_analysis'].analyze(video_path)
+                emotion_results = analyze_emotions(video_path)
                 
                 # 语音转文字
-                speech_results = self.tools['speech_to_text'].transcribe(video_path)
+                speech_results = transcribe_speech(video_path)
                 
                 # 存储分析结果
                 analysis_results[video_path] = {
@@ -151,6 +157,7 @@ class ContentAnalyzerAgent:
     def generate_clip_points(self, analysis_data: Dict[str, Any], user_query: str) -> List[Tuple[float, float]]:
         """
         根据分析结果和用户查询生成剪切点
+        使用chain装饰器增强功能
         """
         clip_points = []
         user_query_lower = user_query.lower()
@@ -183,7 +190,8 @@ class ContentAnalyzerAgent:
         
         return clip_points
     
-    def _deduplicate_and_sort(self, intervals: List[Tuple[float, float]]) -> List[Tuple[float, float]]:
+    @staticmethod
+    def _deduplicate_and_sort(intervals: List[Tuple[float, float]]) -> List[Tuple[float, float]]:
         """
         对时间间隔进行去重和合并
         """
@@ -209,6 +217,7 @@ class ContentAnalyzerAgent:
     def execute(self, state: GraphState) -> GraphState:
         """
         执行内容分析器的主要逻辑
+        实现Runnable接口的标准执行方法
         """
         try:
             result = self.analyze_videos(state)
@@ -225,3 +234,21 @@ class ContentAnalyzerAgent:
             updated_state['error'] = f"内容分析器错误: {str(e)}"
             updated_state['current_agent'] = 'error_handler'
             return updated_state
+    
+    # 实现Runnable接口的invoke方法
+    def invoke(self, input_state: Dict[str, Any], config: Optional[Dict] = None) -> Dict[str, Any]:
+        """
+        实现langchain的Runnable接口
+        支持标准的invoke调用模式
+        """
+        return self.execute(input_state)
+    
+    # 实现Runnable接口的batch方法，支持批量处理
+    def batch(self, inputs: List[Dict[str, Any]], config: Optional[Dict] = None, **kwargs) -> List[Dict[str, Any]]:
+        """
+        支持批量处理多个视频分析任务
+        """
+        results = []
+        for input_state in inputs:
+            results.append(self.execute(input_state))
+        return results

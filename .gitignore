@@ -2,6 +2,7 @@ target/
 .idea/
 logs/
 outputs/
+uploads/
 .venv/
 env/
 .env/

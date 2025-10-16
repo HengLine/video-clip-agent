@@ -1,18 +1,24 @@
 # -*- coding: utf-8 -*-
 """
 @FileName: quality_validator.py
-@Description: 质量验证器智能体，负责验证最终视频的质量和符合度
+@Description: 基于langchain的质量验证器智能体，负责验证最终视频的质量和符合度
 @Author: HengLine
-@Time: 2025/08 - 2025/11
+@Time: 2025/10 - 2025/11
 """
 import os
-from typing import Dict, Any
+import json
+from datetime import datetime
+from typing import Dict, Any, Optional, List
+from langchain_core.runnables import Runnable, chain
+from langchain_core.tools import Tool
 from hengline.logger import debug, info, warning, error
-from .state import GraphState
+from config.config import get_verify_report_dir
+from .agent_state import GraphState
 
-class QualityValidatorAgent:
+class QualityValidatorAgent(Runnable):
     """
-    质量验证器智能体，负责验证最终视频的质量和符合度
+    基于langchain的质量验证器智能体，负责验证最终视频的质量和符合度
+    实现Runnable接口以支持与langchain生态系统的集成
     """
     def __init__(self):
         self.role = "质量验证"
@@ -22,7 +28,13 @@ class QualityValidatorAgent:
             "输出质量评估",
             "用户需求符合度检查"
         ]
-        info(f"初始化 {self.role} 智能体")
+        info(f"初始化 {self.role} 智能体 (基于langchain实现)")
+    
+    def get_tools(self) -> List[Tool]:
+        """
+        获取智能体可用的工具列表
+        """
+        return []  # 质量验证器目前没有使用外部工具
     
     def validate_quality(self, state: GraphState) -> Dict[str, Any]:
         """
@@ -98,12 +110,62 @@ class QualityValidatorAgent:
                 'next_agent': 'error_handler'
             }
     
+    def save_validation_report(self, state: GraphState, validation_report: Dict[str, Any]) -> str:
+        """
+        保存验证报告到指定目录
+        返回报告文件路径
+        """
+        try:
+            final_video_path = state.get('final_video_path')
+            if not final_video_path:
+                warning("无法获取最终视频路径，跳过保存验证报告")
+                return None
+            
+            # 获取验证报告目录
+            verify_dir = get_verify_report_dir()
+            
+            # 获取视频文件名（不包含扩展名）
+            video_filename = os.path.basename(final_video_path)
+            video_name_without_ext = os.path.splitext(video_filename)[0]
+            
+            # 构建报告文件名（与视频同名，扩展名为json）
+            report_filename = f"{video_name_without_ext}.json"
+            report_path = os.path.join(verify_dir, report_filename)
+            
+            # 丰富报告内容
+            enriched_report = {
+                **validation_report,
+                'video_name': video_filename,
+                'verification_time': datetime.now().isoformat(),
+                'metadata': {
+                    'created_by': 'quality_validator_agent',
+                    'version': '1.0.0'
+                }
+            }
+            
+            # 保存报告
+            with open(report_path, 'w', encoding='utf-8') as f:
+                json.dump(enriched_report, f, ensure_ascii=False, indent=2)
+            
+            info(f"验证报告已保存: {report_path}")
+            return report_path
+        except Exception as e:
+            error(f"保存验证报告失败: {str(e)}")
+            return None
+    
     def execute(self, state: GraphState) -> GraphState:
         """
         执行质量验证器的主要逻辑
+        实现Runnable接口的标准执行方法
         """
         try:
             result = self.validate_quality(state)
+            
+            # 保存验证报告
+            if 'validation_report' in result:
+                report_path = self.save_validation_report(state, result['validation_report'])
+                if report_path:
+                    result['validation_report_path'] = report_path
             
             # 更新状态
             updated_state = state.copy()
@@ -118,3 +180,21 @@ class QualityValidatorAgent:
             updated_state['validation_passed'] = False
             updated_state['current_agent'] = 'error_handler'
             return updated_state
+    
+    # 实现Runnable接口的invoke方法
+    def invoke(self, input_state: Dict[str, Any], config: Optional[Dict] = None) -> Dict[str, Any]:
+        """
+        实现langchain的Runnable接口
+        支持标准的invoke调用模式
+        """
+        return self.execute(input_state)
+    
+    # 实现Runnable接口的batch方法，支持批量处理
+    def batch(self, inputs: List[Dict[str, Any]], config: Optional[Dict] = None, **kwargs) -> List[Dict[str, Any]]:
+        """
+        支持批量处理多个质量验证任务
+        """
+        results = []
+        for input_state in inputs:
+            results.append(self.execute(input_state))
+        return results

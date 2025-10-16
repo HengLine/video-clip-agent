@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API文档 - 视频工具智能体</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/prism.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#10b981',
+                        accent: '#8b5cf6',
+                        dark: '#1e293b',
+                        light: '#f8fafc'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                },
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .card-hover {
+                @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+            }
+            .btn-primary {
+                @apply bg-primary text-white px-4 py-2 rounded-lg font-semibold transition-all duration-300 hover:bg-primary/90 hover:shadow-md active:scale-95;
+            }
+            .btn-secondary {
+                @apply bg-secondary text-white px-4 py-2 rounded-lg font-semibold transition-all duration-300 hover:bg-secondary/90 hover:shadow-md active:scale-95;
+            }
+            .endpoint-card {
+                @apply bg-white rounded-xl shadow-md p-6 mb-6 border-l-4 border-primary;
+            }
+            .code-block {
+                @apply bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto text-sm my-4;
+            }
+            .param-table {
+                @apply w-full border-collapse my-4;
+            }
+            .param-table th {
+                @apply bg-gray-100 text-left p-3 border-b;
+            }
+            .param-table td {
+                @apply p-3 border-b;
+            }
+            .tag {
+                @apply inline-block px-2 py-1 text-xs font-semibold rounded-full;
+            }
+            .tag-get {
+                @apply bg-green-100 text-green-800;
+            }
+            .tag-post {
+                @apply bg-blue-100 text-blue-800;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- 导航栏 -->
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa fa-video-camera text-primary text-2xl"></i>
+                <h1 class="text-xl font-bold text-dark">视频工具智能体</h1>
+                <span class="text-xs bg-accent text-white px-2 py-1 rounded-full">API文档</span>
+            </div>
+            <nav class="hidden md:flex space-x-6">
+                <a href="/" class="text-gray-600 hover:text-primary transition-colors">首页</a>
+                <a href="#endpoints" class="text-primary font-medium">API端点</a>
+                <a href="#examples" class="text-gray-600 hover:text-primary transition-colors">示例代码</a>
+            </nav>
+            <div class="md:hidden">
+                <button class="text-gray-600 hover:text-primary transition-colors">
+                    <i class="fa fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-12">
+        <!-- 介绍部分 -->
+        <section class="mb-12 text-center max-w-3xl mx-auto">
+            <h2 class="text-3xl font-bold text-dark mb-4">API文档</h2>
+            <p class="text-gray-600">使用我们提供的RESTful API，您可以轻松集成视频处理功能到您的应用程序中。</p>
+            <div class="mt-8 bg-gray-100 p-6 rounded-lg">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <div class="mb-4 md:mb-0">
+                        <p class="text-sm text-gray-500">当前版本</p>
+                        <p class="text-lg font-semibold">v1.0.0</p>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <a href="/" class="btn-secondary flex items-center space-x-1">
+                            <i class="fa fa-home"></i>
+                            <span>返回首页</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- API端点部分 -->
+        <section id="endpoints" class="mb-12">
+            <h3 class="text-2xl font-bold text-dark mb-6">API端点</h3>
+            
+            <!-- 视频处理API -->
+            <div class="endpoint-card">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h4 class="text-xl font-semibold text-dark">视频处理</h4>
+                        <p class="text-gray-600 mt-1">上传视频文件并指定处理需求，获取处理后的视频。</p>
+                    </div>
+                    <span class="tag tag-post">POST</span>
+                </div>
+                <div class="bg-gray-50 p-3 rounded mb-4 font-mono text-sm">/api/process-video</div>
+                
+                <h5 class="text-lg font-semibold mb-2">请求参数</h5>
+                <form enctype="multipart/form-data">
+                    <table class="param-table">
+                        <thead>
+                            <tr>
+                                <th>参数名</th>
+                                <th>类型</th>
+                                <th>是否必须</th>
+                                <th>描述</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>query</td>
+                                <td>String</td>
+                                <td>是</td>
+                                <td>视频处理需求的文字描述</td>
+                            </tr>
+                            <tr>
+                                <td>files[]</td>
+                                <td>File</td>
+                                <td>是</td>
+                                <td>要处理的视频文件，支持多个文件，格式为MP4、AVI、MOV、MKV</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </form>
+                
+                <h5 class="text-lg font-semibold mb-2">成功响应</h5>
+                <div class="code-block">
+<pre>{"status": "success", "message": "视频处理成功", "video_url": "/api/video/xxx.mp4", "report": {...}}</pre>
+                </div>
+                
+                <h5 class="text-lg font-semibold mb-2">错误响应</h5>
+                <div class="code-block">
+<pre>{"status": "error", "message": "错误描述"}</pre>
+                </div>
+            </div>
+            
+            <!-- 视频下载API -->
+            <div class="endpoint-card">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h4 class="text-xl font-semibold text-dark">视频下载</h4>
+                        <p class="text-gray-600 mt-1">获取处理后的视频文件。</p>
+                    </div>
+                    <span class="tag tag-get">GET</span>
+                </div>
+                <div class="bg-gray-50 p-3 rounded mb-4 font-mono text-sm">/api/video/&lt;filename&gt;</div>
+                
+                <h5 class="text-lg font-semibold mb-2">路径参数</h5>
+                <table class="param-table">
+                    <thead>
+                        <tr>
+                            <th>参数名</th>
+                            <th>类型</th>
+                            <th>描述</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>filename</td>
+                            <td>String</td>
+                            <td>视频文件名</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <h5 class="text-lg font-semibold mb-2">响应</h5>
+                <p class="text-gray-600">返回视频文件流</p>
+            </div>
+            
+            <!-- 健康检查API -->
+            <div class="endpoint-card">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h4 class="text-xl font-semibold text-dark">健康检查</h4>
+                        <p class="text-gray-600 mt-1">检查服务是否正常运行。</p>
+                    </div>
+                    <span class="tag tag-get">GET</span>
+                </div>
+                <div class="bg-gray-50 p-3 rounded mb-4 font-mono text-sm">/api/health</div>
+                
+                <h5 class="text-lg font-semibold mb-2">响应</h5>
+                <div class="code-block">
+<pre>{"status": "healthy", "agents_loaded": 4}</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- 示例代码部分 -->
+        <section id="examples" class="mb-12">
+            <h3 class="text-2xl font-bold text-dark mb-6">示例代码</h3>
+            
+            <!-- Python示例 -->
+            <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+                <div class="flex items-center mb-4">
+                    <i class="fa fa-python text-blue-500 text-2xl mr-2"></i>
+                    <h4 class="text-xl font-semibold text-dark">Python</h4>
+                </div>
+                <div class="code-block">
+<pre><code class="language-python">import requests
+
+# 视频处理
+url = "http://localhost:8000/api/process-video"
+# 支持的格式: mp4, avi, mov, mkv, wmv, flv, ts
+files = {'files[]': open('video.mp4', 'rb')}
+data = {'query': '提取所有包含猫的片段并按时间顺序排列'}
+
+response = requests.post(url, files=files, data=data)
+result = response.json()
+
+if result['status'] == 'success':
+    print('处理成功!')
+    video_url = result['video_url']
+    # 下载视频
+    video_response = requests.get(video_url)
+    with open('output.mp4', 'wb') as f:
+        f.write(video_response.content)
+else:
+    print('处理失败:', result['message'])</code></pre>
+                </div>
+            </div>
+            
+            <!-- JavaScript示例 -->
+            <div class="bg-white rounded-xl shadow-md p-6 mb-6">
+                <div class="flex items-center mb-4">
+                    <i class="fa fa-code text-yellow-500 text-2xl mr-2"></i>
+                    <h4 class="text-xl font-semibold text-dark">JavaScript (Fetch API)</h4>
+                </div>
+                <div class="code-block">
+<pre><code class="language-javascript">// 创建FormData对象
+const formData = new FormData();
+formData.append('query', '提取所有包含猫的片段并按时间顺序排列');
+formData.append('files[]', fileInput.files[0]);
+
+// 发送请求
+fetch('http://localhost:8000/api/process-video', {
+    method: 'POST',
+    body: formData
+})
+.then(response => response.json())
+.then(data => {
+    if (data.status === 'success') {
+        console.log('处理成功!');
+        const videoUrl = data.video_url;
+        // 显示或下载视频
+        const videoElement = document.createElement('video');
+        videoElement.src = videoUrl;
+        videoElement.controls = true;
+        document.body.appendChild(videoElement);
+    } else {
+        console.error('处理失败:', data.message);
+    }
+})
+.catch(error => {
+    console.error('请求出错:', error);
+});</code></pre>
+                </div>
+            </div>
+        </section>
+        
+        <!-- 最佳实践部分 -->
+        <section class="mb-12">
+            <h3 class="text-2xl font-bold text-dark mb-6">最佳实践</h3>
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <ul class="space-y-4">
+                    <li class="flex items-start">
+                        <i class="fa fa-check-circle text-green-500 mt-1 mr-3"></i>
+                        <div>
+                            <strong>详细描述处理需求</strong>
+                            <p class="text-gray-600">提供具体、详细的处理需求描述，以获得更准确的结果。</p>
+                        </div>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fa fa-check-circle text-green-500 mt-1 mr-3"></i>
+                        <div>
+                            <strong>合理控制视频大小</strong>
+                            <p class="text-gray-600">过大的视频文件可能导致处理时间过长，请考虑预先压缩视频。</p>
+                        </div>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fa fa-check-circle text-green-500 mt-1 mr-3"></i>
+                        <div>
+                            <strong>错误处理</strong>
+                            <p class="text-gray-600">始终检查API响应的status字段，并妥善处理可能出现的错误。</p>
+                        </div>
+                    </li>
+                    <li class="flex items-start">
+                        <i class="fa fa-check-circle text-green-500 mt-1 mr-3"></i>
+                        <div>
+                            <strong>异步处理</strong>
+                            <p class="text-gray-600">对于大型视频处理任务，考虑使用异步处理模式，避免长时间阻塞请求。</p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-dark text-white py-8">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="mb-4 md:mb-0">
+                    <div class="flex items-center space-x-2">
+                        <i class="fa fa-video-camera text-primary text-xl"></i>
+                        <span class="font-bold text-lg">视频工具智能体</span>
+                    </div>
+                    <p class="text-gray-400 text-sm mt-2">智能、高效的视频处理解决方案</p>
+                </div>
+                <div class="flex space-x-6">
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                        <i class="fa fa-github text-xl"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                        <i class="fa fa-twitter text-xl"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors">
+                        <i class="fa fa-envelope text-xl"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-6 pt-6 text-center text-gray-500 text-sm">
+                <p>&copy; 2025 视频工具智能体 | API文档版本 v1.0.0</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化Prism.js语法高亮
+            Prism.highlightAll();
+            
+            // 平滑滚动
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>

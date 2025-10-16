@@ -14,3 +14,8 @@ pydub
 ffmpeg-python
 colorama
 python-dotenv
+
+# 注意：此项目需要在系统上安装FFmpeg
+# Windows用户：可以从 https://ffmpeg.org/download.html 下载并添加到PATH
+# Linux用户：可以使用包管理器安装 (apt install ffmpeg 或 yum install ffmpeg)
+# Mac用户：可以使用Homebrew安装 (brew install ffmpeg)
