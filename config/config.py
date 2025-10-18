@@ -62,9 +62,9 @@ def get_config_path() -> str:
     # 获取当前文件所在路径
     current_dir = os.path.dirname(os.path.abspath(__file__))
     # 向上两级到达项目根目录
-    project_root = os.path.dirname(os.path.dirname(current_dir))
+    # project_root = os.path.dirname(os.path.dirname(current_dir))
     # 配置文件路径
-    config_path = os.path.join(project_root, 'config', 'config.json')
+    config_path = os.path.join(current_dir, 'config.json')
     return config_path
 
 def get_settings_config() -> Dict[str, Any]:

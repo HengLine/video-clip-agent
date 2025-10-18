@@ -1,43 +1,59 @@
 {
-    "logging": {
-        "level": "DEBUG",
-        "console_level": "DEBUG",
-        "file_level": "INFO",
-        "disable_unnecessary_logs": true
+  "logging": {
+    "level": "DEBUG",
+    "console_level": "DEBUG",
+    "file_level": "INFO",
+    "disable_unnecessary_logs": true
+  },
+  "flask": {
+    "host": "0.0.0.0",
+    "port": 8000,
+    "debug": true
+  },
+  "video_processing": {
+    "upload_dir": "uploads",
+    "temp_dir": "data/temp",
+    "output_dir": "data/output",
+    "verify_dir": "data/verify",
+    "default_transition_duration": 0.5,
+    "max_concurrent_processes": 2,
+    "allowed_extensions": [
+      "mp4",
+      "avi",
+      "mov",
+      "mkv",
+      "wmv",
+      "flv",
+      "ts"
+    ]
+  },
+  "video_rendering": {
+    "width": 1920,
+    "height": 1080,
+    "resize_mode": "fit",
+    "codec": "libx264",
+    "preset": "medium",
+    "crf": 23,
+    "framerate": 30,
+    "audio_bitrate": "128k",
+    "transcode_params": {
+      "enable": true,
+      "ignore_dts": true,
+      "force_key_frames": true,
+      "movflags": "+faststart"
     },
-    "flask": {
-        "host": "0.0.0.0",
-        "port": 8000,
-        "debug": true
-    },
-    "video_processing": {
-        "upload_dir": "uploads",
-        "temp_dir": "data/temp",
-        "output_dir": "data/output",
-        "verify_dir": "data/verify",
-        "default_transition_duration": 0.5,
-        "max_concurrent_processes": 2,
-        "allowed_extensions": ["mp4", "avi", "mov", "mkv", "wmv", "flv", "ts"]
-    },
-    "video_rendering": {
-        "width": 1920,
-        "height": 1080,
-        "resize_mode": "fit",
-        "codec": "libx264",
-        "preset": "medium",
-        "crf": 23,
-        "framerate": 30,
-        "audio_bitrate": "128k",
-        "transcode_params": {
-            "enable": true,
-            "ignore_dts": true,
-            "force_key_frames": true,
-            "movflags": "+faststart"
-        },
-        "transition": {
-            "enabled": true,
-            "type": "random",
-            "duration": 1.0
-        }
+    "transition": {
+      "enabled": true,
+      "type": "random",
+      "duration": 1.0,
+      "types": [
+        "fade", "wipeleft", "wiperight", "wipeup", "wipedown", "slideleft", "slideright", "slideup", "slidedown",
+        "circlecrop", "rectcrop", "distance", "fadeblack", "fadewhite", "radial", "smoothleft", "smoothright", "smoothup",
+        "circleopen", "circleclose", "vertopen", "vertclose", "horzopen", "horzclose", "dissolve", "pixelize", "diagtl", "diagtr",
+        "diagbl", "diagbr", "hlslice", "hrslice", "vuslice", "vdslice", "hblur", "fadegrays", "wipetl", "wipetr", "wipebl", "wipebr",
+        "squeezeh", "squeezev", "zoomin", "fadefast", "fadeslow", "hlwind", "hrwind", "vuwind", "vdwind", "coverleft", "coverright",
+        "coverup", "coverdown", "revealleft", "revealright", "revealup", "revealdown","smoothdown"
+      ]
     }
+  }
 }

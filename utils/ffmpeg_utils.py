@@ -8,10 +8,11 @@ import subprocess
 import uuid
 
 from config.config import get_video_rendering_config
-from hengline.logger import debug, error, warning
+from hengline.logger import debug, error, warning, info
 from utils.ffmpeg_env_utils import find_ffmpeg, check_xfade_support
 from utils.ffmpeg_run_utils import get_video_duration, merge_videos, transcode_merge_video, codec_video, \
     scale_video, apply_xfade_transition, apply_basic_transition
+from utils.log_utils import print_log_exception
 
 
 class FFmpegUtils:
@@ -144,30 +145,30 @@ class FFmpegUtils:
             if not output_path or not isinstance(output_path, str):
                 error("输出路径必须是有效的字符串")
                 return None
-                
+
             if not clip_paths or len(clip_paths) < 2:
                 error("至少需要两个视频片段才能应用转场效果")
                 return None
-                
+
             # 验证所有输入视频路径并过滤
             valid_clip_paths = []
             for i, clip_path in enumerate(clip_paths):
                 if not clip_path or not isinstance(clip_path, str):
-                    error(f"视频片段 {i+1} 的路径无效或为None")
+                    error(f"视频片段 {i + 1} 的路径无效或为None")
                     continue  # 跳过无效路径，继续检查其他路径
                 if not os.path.exists(clip_path):
-                    error(f"视频片段 {i+1} 不存在: {clip_path}")
+                    error(f"视频片段 {i + 1} 不存在: {clip_path}")
                     continue  # 跳过不存在的路径
                 valid_clip_paths.append(clip_path)
-            
+
             # 如果过滤后没有有效的视频片段，返回None
             if len(valid_clip_paths) < 2:
                 error(f"有效视频片段数量不足，需要至少2个有效的视频片段，当前有: {len(valid_clip_paths)}")
                 return None
-            
+
             # 使用过滤后的有效路径列表
             clip_paths = valid_clip_paths
-            
+
             # 从配置文件获取转场设置
             try:
                 rendering_config = get_video_rendering_config()
@@ -180,36 +181,41 @@ class FFmpegUtils:
                 error(f"获取配置时出错: {str(e)}")
                 # 使用默认配置
                 transition_config = {}
-            
+
             # 如果未指定转场类型或时长，从配置中获取
             if transition_type is None:
                 transition_type = transition_config.get('type', 'fade')
+            elif transition_type.lower() == 'random':
+                # 如果是随机模式，从支持的转场类型中随机选择
+                import random
+                transition_type = random.choice(
+                    transition_config.get('types', ["fade", "wipeleft", "wiperight", "wipeup", "wipedown", "slideleft", "slideright", "slideup", "slidedown"]))
+                debug(f"随机选择转场类型: {transition_type}")
+
             if transition_duration is None:
-                transition_duration = transition_config.get('duration', 1.0)
-            
-            debug(f"开始应用转场效果: 类型={transition_type}, 时长={transition_duration}秒")
+                transition_duration = transition_config.get('duration', 1.0)  # 使用配置文件中的默认值
+
+            info(f"开始应用转场效果: 类型={transition_type}, 时长={transition_duration}秒")
             debug(f"处理 {len(clip_paths)} 个视频片段")
 
             # 创建临时目录
             try:
                 output_dir = os.path.dirname(output_path)
-                if output_dir:
-                    os.makedirs(output_dir, exist_ok=True)
                 temp_dir = os.path.join(output_dir, "temp_transition")
                 os.makedirs(temp_dir, exist_ok=True)
             except Exception as e:
                 error(f"创建目录失败: {str(e)}")
                 return None
-            
+
             # 首先对所有视频进行统一尺寸处理
             scaled_files = []
             for i, clip_path in enumerate(clip_paths):
                 scaled_output = os.path.join(temp_dir, f"scaled_{i}_{os.path.basename(clip_path)}")
-                
+
                 debug(f"调整视频尺寸: {clip_path} -> {scaled_output}")
                 # 调用ffmpeg_run_utils中的scale_video函数
                 success, stderr = scale_video(clip_path, scaled_output, width, height, resize_mode, ffmpeg_path)
-                
+
                 if success:
                     scaled_files.append(scaled_output)
                 else:
@@ -219,64 +225,52 @@ class FFmpegUtils:
                         if os.path.exists(f):
                             os.remove(f)
                     return None
-            
+
             # 检查FFmpeg是否支持xfade滤镜
             use_xfade = check_xfade_support(ffmpeg_path)
             debug(f"FFmpeg {'支持' if use_xfade else '不支持'} xfade滤镜")
-            
-            # 支持的转场类型列表
-            supported_transitions = ['fade', 'slideleft', 'slideright', 'slideup', 'slidedown']
-            
-            # 如果是随机模式，从支持的转场类型中随机选择
-            if transition_type.lower() == 'random':
-                import random
-                safe_transition_type = random.choice(supported_transitions)
-                debug(f"随机选择转场类型: {safe_transition_type}")
-            else:
-                # 使用指定的转场类型，如果不在支持列表中则使用fade作为备选
-                safe_transition_type = transition_type if transition_type in supported_transitions else 'fade'
-            
+
             # 第二步：逐步合并视频
             current_merged = scaled_files[0]
             temp_files_to_clean = []
-            
+
             for i in range(1, len(scaled_files)):
                 next_video = scaled_files[i]
                 temp_output = os.path.join(temp_dir, f"temp_merged_{i}.mp4")
-                
+
                 # 获取当前视频的时长
                 current_duration = get_video_duration(current_merged, ffmpeg_path, 3.0)
                 next_duration = get_video_duration(next_video, ffmpeg_path, 3.0)
-                
+
                 debug(f"合并 {os.path.basename(current_merged)} ({current_duration}秒) 和 {os.path.basename(next_video)} ({next_duration}秒)")
-                
+
                 if use_xfade:
-                    # 尝试使用xfade滤镜
-                    offset = current_duration - transition_duration
+                    # 尝试使用xfade滤镜，# 减掉 transition_duration 方式会减少时长（视频重叠部分直接剪掉）
+                    offset = current_duration  # - transition_duration
                     debug("尝试使用xfade滤镜进行转场")
                     # 调用ffmpeg_run_utils中的apply_xfade_transition函数
                     success, stderr = apply_xfade_transition(
-                        current_merged, next_video, temp_output, safe_transition_type,
+                        current_merged, next_video, temp_output, transition_type,
                         transition_duration, offset, ffmpeg_path
                     )
-                    
+
                     # 检查xfade是否成功
                     if not success:
-                        debug(f"xfade转场失败，将回退到基础淡入淡出方案: {stderr}")
+                        warning(f"xfade转场失败，将回退到基础淡入淡出方案: {stderr}")
                         use_xfade = False
                     else:
                         # xfade成功，继续处理
-                        debug("xfade转场成功")
-                
+                        info("xfade转场成功")
+
                 if not use_xfade:
                     # 使用基础的淡入淡出方案
-                    debug("使用基础淡入淡出方案")
+                    info("使用基础淡入淡出方案")
                     # 调用ffmpeg_run_utils中的apply_basic_transition函数
                     success, stderr = apply_basic_transition(
                         current_merged, next_video, temp_output, transition_duration,
                         temp_dir, ffmpeg_path
                     )
-                    
+
                     if not success:
                         error(f"应用基础转场失败: {stderr}")
                         # 清理临时文件
@@ -286,32 +280,33 @@ class FFmpegUtils:
                         if os.path.exists(current_merged) and current_merged != scaled_files[0]:
                             os.remove(current_merged)
                         return None
-                
+
                 # 记录需要清理的临时文件
                 if i > 1:  # 保留第一个缩放文件直到完成
                     temp_files_to_clean.append(current_merged)
-                
+
                 # 更新当前合并结果
                 current_merged = temp_output
-            
+
             # 将最终合并结果移动到输出路径
             import shutil
             shutil.move(current_merged, output_path)
-            
+
             # 清理所有临时文件
             for f in temp_files_to_clean + scaled_files:
                 if os.path.exists(f):
                     os.remove(f)
-            
+
             # 清理临时目录
             if os.path.exists(temp_dir):
                 shutil.rmtree(temp_dir, ignore_errors=True)
-            
+
             debug(f"转场效果应用成功，输出文件: {output_path}")
             return output_path
 
         except Exception as e:
             error(f"应用转场效果时发生异常: {str(e)}")
+            print_log_exception()
             # 清理失败的输出文件
             if os.path.exists(output_path):
                 os.remove(output_path)
@@ -346,29 +341,29 @@ class FFmpegUtils:
         if not output_path or not isinstance(output_path, str):
             error("输出路径必须是有效的字符串")
             return None
-            
+
         if not clip_paths or not isinstance(clip_paths, list) or len(clip_paths) == 0:
             error("至少需要一个视频片段")
             return None
-            
+
         # 验证所有输入视频路径
         valid_clip_paths = []
         for i, clip_path in enumerate(clip_paths):
             if not clip_path or not isinstance(clip_path, str):
-                error(f"视频片段 {i+1} 的路径无效")
+                error(f"视频片段 {i + 1} 的路径无效")
                 continue
             if not os.path.exists(clip_path):
-                error(f"视频片段 {i+1} 不存在: {clip_path}")
+                error(f"视频片段 {i + 1} 不存在: {clip_path}")
                 continue
             valid_clip_paths.append(clip_path)
-            
+
         if not valid_clip_paths:
             error("没有有效的视频片段可供处理")
             return None
-            
+
         # 更新clip_paths为有效路径列表
         clip_paths = valid_clip_paths
-            
+
         # 从配置文件获取默认配置
         merge_list_file = None
         try:
@@ -445,10 +440,10 @@ class FFmpegUtils:
 
         # 检查是否启用转场效果
         transition_enabled = config.get('transition', {}).get('enabled', False)
-        
+
         # 获取转码参数配置，包含enable_transcode变量
         transcode_params = config.get('transcode_params', {})
-        enable_transcode = transcode_params.get('enable', True) or transition_enabled
+        enable_transcode = transcode_params.get('enable', False) or transition_enabled
 
         # 首先对所有视频进行统一编码
         transcoded_clips = []
@@ -461,17 +456,17 @@ class FFmpegUtils:
 
                 # 创建临时转码输出文件
                 transcode_output = os.path.join(temp_dir, f"transcoded_{i}_{str(uuid.uuid4())[:8]}.mp4")
-                
+
                 # 直接调用ffmpeg_run_utils中的方法进行单个视频转码
                 # 为单个视频创建临时文件列表
                 temp_list_file = os.path.join(temp_dir, f"single_clip_{i}_{str(uuid.uuid4())[:8]}.txt")
                 with open(temp_list_file, 'w', encoding='utf-8') as f:
                     abs_path = os.path.abspath(clip_path).replace('\\', '/')
                     f.write(f"file '{abs_path}'\n")
-                
+
                 # 调用codec_video方法进行转码
                 transcode_result, transcode_stderr = codec_video(temp_list_file, transcode_output, config, ffmpeg_path)
-                
+
                 # 清理临时列表文件
                 if os.path.exists(temp_list_file):
                     try:
@@ -502,7 +497,7 @@ class FFmpegUtils:
                 try:
                     transition_config = config.get('transition', {})
                     transition_type = transition_config.get('type', 'fade')
-                    transition_duration = transition_config.get('duration', 1.0)
+                    transition_duration = transition_config.get('duration', 1.0)  # 使用配置文件中的默认值
 
                     # 调用apply_video_transitions方法
                     transition_result = FFmpegUtils.apply_video_transitions(
@@ -618,16 +613,16 @@ class FFmpegUtils:
             str: 输出视频路径
         """
         debug(f"使用转码方式渲染视频")
-        
+
         # 验证输入参数
         if not isinstance(clip_paths, list):
             error("clip_paths必须是列表类型")
             return None
-            
+
         if not output_path or not isinstance(output_path, str):
             error("无效的输出路径")
             return None
-            
+
         # 过滤出有效的视频片段路径
         valid_clip_paths = []
         for clip in clip_paths:
@@ -635,7 +630,7 @@ class FFmpegUtils:
                 valid_clip_paths.append(clip)
             else:
                 debug(f"跳过无效的视频片段: {clip}")
-                
+
         if not valid_clip_paths:
             error("没有有效的视频片段可供转码渲染")
             return None
@@ -676,7 +671,7 @@ class FFmpegUtils:
                         except Exception as e:
                             error(f"处理文件路径 {clip} 失败: {str(e)}")
                             continue
-                
+
                 # 检查生成的列表文件是否为空
                 if os.path.exists(temp_list_file) and os.path.getsize(temp_list_file) == 0:
                     error("生成的文件列表为空，无法进行转码合并")
@@ -722,7 +717,7 @@ class FFmpegUtils:
 
             # 如果codec_video失败，尝试使用transcode_merge_video方法
             debug("尝试使用transcode_merge_video方法进行转码合并")
-            
+
             # 创建新的临时文件列表
             list_file = os.path.join(temp_dir, f"ffmpeg_list_{str(uuid.uuid4())[:8]}.txt")
             try:
@@ -731,7 +726,7 @@ class FFmpegUtils:
                     for video_path in valid_clip_paths:
                         abs_path = os.path.abspath(video_path).replace('\\', '/')
                         f.write(f"file '{abs_path}'\n")
-                
+
                 # 调用ffmpeg_run_utils中的transcode_merge_video方法
                 transcode_result, transcode_stderr = transcode_merge_video(list_file, output_path, config, ffmpeg_path)
 
