@@ -26,6 +26,9 @@ class GraphState(TypedDict):
     # 输出和控制
     final_video_path: str               # 最终输出路径
     current_agent: str                  # 当前执行智能体
-    next_agent: str                     # 下一个智能体
+    next_agent: str | None              # 下一个智能体
     error: str                          # 错误信息
+    error_details: Optional[Dict[str, Any]]  # 错误详情
+    processing_status: str              # 处理状态（如：待处理、处理中、已完成）
     validation_passed: bool             # 验证结果
+    validation_report: Optional[Dict[str, Any]]  # 验证报告

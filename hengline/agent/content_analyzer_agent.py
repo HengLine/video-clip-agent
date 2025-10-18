@@ -15,7 +15,6 @@ from .agent_state import GraphState
 
 # 使用langchain的tool装饰器定义工具函数
 @tool
-
 def detect_scenes(video_path: str) -> List[Tuple[float, float]]:
     """检测视频中的场景切换点"""
     # 这里是示例实现，实际需要调用视频分析库

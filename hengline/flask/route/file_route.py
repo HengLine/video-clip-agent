@@ -39,11 +39,13 @@ def upload_file_route():
             debug(f"保存文件: {filepath}")
 
             # 返回文件信息
+            # 从filepath中提取文件名
+            file_name = os.path.basename(filepath)
             return jsonify({
                 'status': 'success',
                 'message': '文件上传成功',
-                'filename': unique_filename,
-                'original_filename': filename,
+                'filename': file_name,
+                'original_filename': file.filename,
                 'filepath': filepath
             })
         else:
