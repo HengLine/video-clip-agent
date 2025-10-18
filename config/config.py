@@ -8,8 +8,12 @@
 import os
 import json
 from typing import Dict, Any
+from dotenv import load_dotenv
 
 from hengline.logger import debug, info, error
+
+# 加载.env文件中的环境变量
+load_dotenv()
 
 # 默认配置
 DEFAULT_CONFIG = {
@@ -52,6 +56,18 @@ DEFAULT_CONFIG = {
             'type': 'crossfade',  # 转场类型: crossfade, fade, slide_left, slide_right, random
             'duration': 1.0  # 转场时长（秒）
         }
+    },
+    'ai_model': {
+        'provider': 'qwen',  # 默认AI模型提供商: openai, qwen, deepseek
+        'model': 'qwen-turbo',  # 默认模型
+        'temperature': 0.1,
+        'max_tokens': 2000,
+        'timeout': 30,
+        'qwen': {
+            'api_key': '',
+            'base_url': 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+            'model': 'qwen-turbo'
+        },
     }
 }
 
@@ -79,14 +95,59 @@ def get_settings_config() -> Dict[str, Any]:
                 # 合并默认配置和用户配置
                 merged_config = DEFAULT_CONFIG.copy()
                 merged_config.update(config)
+                # 从环境变量更新AI模型配置
+                _update_ai_config_from_env(merged_config)
                 return merged_config
         else:
             # 如果配置文件不存在，返回默认配置
-            return DEFAULT_CONFIG
+            default_config = DEFAULT_CONFIG.copy()
+            _update_ai_config_from_env(default_config)
+            return default_config
     except Exception as e:
         # 如果读取配置文件出错，返回默认配置
         error(f"读取配置文件失败: {str(e)}")
-        return DEFAULT_CONFIG
+        default_config = DEFAULT_CONFIG.copy()
+        _update_ai_config_from_env(default_config)
+        return default_config
+
+def _update_ai_config_from_env(config: Dict[str, Any]) -> None:
+    """
+    从环境变量更新AI模型配置
+    
+    Args:
+        config: 配置字典
+    """
+    if 'ai_model' not in config:
+        config['ai_model'] = DEFAULT_CONFIG['ai_model']
+    
+    # 更新OpenAI配置
+    if os.environ.get('OPENAI_API_KEY'):
+        config['ai_model']['openai']['api_key'] = os.environ.get('OPENAI_API_KEY')
+    if os.environ.get('OPENAI_BASE_URL'):
+        config['ai_model']['openai']['base_url'] = os.environ.get('OPENAI_BASE_URL')
+    
+    # 更新Qwen配置
+    if os.environ.get('QWEN_API_KEY'):
+        config['ai_model']['qwen']['api_key'] = os.environ.get('QWEN_API_KEY')
+    if os.environ.get('QWEN_BASE_URL'):
+        config['ai_model']['qwen']['base_url'] = os.environ.get('QWEN_BASE_URL')
+    
+    # 更新DeepSeek配置
+    if os.environ.get('DEEPSEEK_API_KEY'):
+        config['ai_model']['deepseek']['api_key'] = os.environ.get('DEEPSEEK_API_KEY')
+    if os.environ.get('DEEPSEEK_BASE_URL'):
+        config['ai_model']['deepseek']['base_url'] = os.environ.get('DEEPSEEK_BASE_URL')
+    
+    # 更新Flask配置
+    if os.environ.get('FLASK_HOST'):
+        config['flask']['host'] = os.environ.get('FLASK_HOST')
+    if os.environ.get('FLASK_PORT'):
+        try:
+            config['flask']['port'] = int(os.environ.get('FLASK_PORT'))
+        except ValueError:
+            pass
+    if os.environ.get('FLASK_DEBUG'):
+        config['flask']['debug'] = os.environ.get('FLASK_DEBUG').lower() == 'true'
 
 def save_config(config: Dict[str, Any]) -> bool:
     """

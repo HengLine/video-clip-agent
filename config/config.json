@@ -55,5 +55,26 @@
         "coverup", "coverdown", "revealleft", "revealright", "revealup", "revealdown","smoothdown"
       ]
     }
+  },
+  "ai_model": {
+    "provider": "qwen",
+    "temperature": 0,
+    "max_tokens": 1024,
+    "timeout": 30,
+    "openai": {
+      "api_key": "",
+      "base_url": "",
+      "model": "gpt-3.5-turbo"
+    },
+    "qwen": {
+      "api_key": "",
+      "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+      "model": "qwen-plus"
+    },
+    "deepseek": {
+      "api_key": "",
+      "base_url": "https://api.deepseek.com/v1",
+      "model": "deepseek-chat"
+    }
   }
 }

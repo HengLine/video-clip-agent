@@ -1,6 +1,5 @@
 langchain==0.3.27
 langgraph==0.6.10
-flask
 flask-cors
 werkzeug
 transformers
@@ -19,3 +18,23 @@ python-dotenv
 # Windows用户：可以从 https://ffmpeg.org/download.html 下载并添加到PATH
 # Linux用户：可以使用包管理器安装 (apt install ffmpeg 或 yum install ffmpeg)
 # Mac用户：可以使用Homebrew安装 (brew install ffmpeg)
+# OpenAI API 客户端
+openai>=1.0.0
+# tongyi>=0.1.4
+
+# 环境变量管理
+python-dotenv>=1.0.0
+
+# Flask Web框架
+flask>=2.0.0
+
+# 视频处理相关库
+moviepy>=1.0.3
+opencv-python>=4.8.0  # 用于计算机视觉功能，场景识别和内容分析
+
+# 日志处理
+python-json-logger>=2.0.0
+
+# 其他依赖
+requests>=2.25.0
+tqdm>=4.60.0
