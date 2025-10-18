@@ -10,7 +10,7 @@ import os
 import subprocess
 import uuid
 
-from hengline.logger import error, debug
+from hengline.logger import error, debug, warning
 from utils.log_utils import print_log_exception
 
 
@@ -26,8 +26,6 @@ def get_video_duration(video_path, ffmpeg_path: str = "ffprobe", default_duratio
     """
 
     try:
-        # 使用ffprobe获取视频信息
-
         # 获取以秒为单位的时长  ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 input.mp4
         cmd = [ffmpeg_path, '-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', video_path]
 
@@ -53,6 +51,41 @@ def get_video_duration(video_path, ffmpeg_path: str = "ffprobe", default_duratio
         print_log_exception()
         error(f"无法获取视频 {video_path} 的时长，使用默认值{default_duration}秒")
         return default_duration
+
+
+def has_audio_info(video_path) -> bool:
+    """检测视频是否有音频流"""
+    try:
+        # 使用ffprobe获取流信息
+        cmd = [
+            'ffprobe', '-v', 'quiet',
+            '-print_format', 'json',
+            '-show_streams',
+            video_path
+        ]
+
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        data = json.loads(result.stdout)
+
+        # 检查是否有音频流
+        audio_streams = [stream for stream in data['streams'] if stream['codec_type'] == 'audio']
+
+        if audio_streams:
+            debug(f"{video_path} 找到 {len(audio_streams)} 个音频流")
+            for i, audio in enumerate(audio_streams):
+                debug(f"音频流 {i + 1}:")
+                debug(f"  编码器: {audio.get('codec_name', '未知')}")
+                debug(f"  声道数: {audio.get('channels', '未知')}")
+                debug(f"  采样率: {audio.get('sample_rate', '未知')} Hz")
+                debug(f"  比特率: {audio.get('bit_rate', '未知')}")
+            return True
+        else:
+            warning("没有找到音频流")
+            return False
+
+    except Exception as e:
+        error(f"错误: {e}")
+        return True
 
 
 def get_video_info(video_path: str, ffmpeg_path: str = "ffprobe") -> dict:
@@ -212,7 +245,7 @@ def merge_videos(merge_list_file, output_path: str, ffmpeg_path: str = "ffmpeg")
                         video_paths.append(path)
         except Exception as e:
             debug(f"读取合并列表文件失败: {str(e)}")
-            
+
         # 检查是否有任何视频包含音频
         has_any_audio = False
         for video_path in video_paths:
@@ -229,7 +262,7 @@ def merge_videos(merge_list_file, output_path: str, ffmpeg_path: str = "ffmpeg")
                         break  # 只要有一个视频有音频就可以了
                 except Exception as e:
                     debug(f"检查视频 {video_path} 音频流失败: {str(e)}")
-        
+
         # 构建合并命令
         merge_cmd = [
             ffmpeg_path,
@@ -238,18 +271,18 @@ def merge_videos(merge_list_file, output_path: str, ffmpeg_path: str = "ffmpeg")
             "-safe", "0",
             "-i", merge_list_file,
         ]
-        
+
         # 根据是否有音频设置不同的合并策略
         if has_any_audio:
             # 有音频时，分别指定视频和音频的编码方式
             merge_cmd.extend([
                 "-c:v", "copy",  # 复制视频流
-                "-c:a", "copy"   # 复制音频流
+                "-c:a", "copy"  # 复制音频流
             ])
         else:
             # 没有音频时，直接复制所有流
             merge_cmd.extend(["-c", "copy"])
-            
+
         merge_cmd.append(output_path)
 
         debug(f"执行合并命令: {' '.join(merge_cmd)}")
@@ -353,16 +386,16 @@ def scale_video(input_path: str, output_path: str, width: int, height: int, resi
         if not input_path or not isinstance(input_path, str):
             error("输入路径必须是有效的字符串")
             return False, "输入路径无效"
-            
+
         if not output_path or not isinstance(output_path, str):
             error("输出路径必须是有效的字符串")
             return False, "输出路径无效"
-            
+
         # 验证输入文件是否存在
         if not os.path.exists(input_path):
             error(f"输入文件不存在: {input_path}")
             return False, "输入文件不存在"
-            
+
         # 确保输出目录存在
         try:
             output_dir = os.path.dirname(output_path)
@@ -371,29 +404,17 @@ def scale_video(input_path: str, output_path: str, width: int, height: int, resi
         except Exception as e:
             error(f"创建输出目录失败: {str(e)}")
             return False, f"创建输出目录失败: {str(e)}"
-            
+
         # 检查视频是否有音频
-        has_audio = False
-        try:
-            probe_cmd = [
-                ffmpeg_path, '-v', 'error', '-show_streams', '-select_streams', 'a',
-                '-of', 'default=noprint_wrappers=1:nokey=1', input_path
-            ]
-            result = subprocess.run(probe_cmd, capture_output=True, text=True, check=False)
-            has_audio = len(result.stdout.strip()) > 0
-            debug(f"视频 {input_path} {'有音频' if has_audio else '无音频'}")
-        except Exception as e:
-            debug(f"检查音频流失败: {str(e)}")
-            # 如果检查失败，默认尝试保留音频
-            has_audio = True
-            
+        has_audio = has_audio_info(input_path)
+
         # 构建尺寸调整命令
         scale_cmd = [
             ffmpeg_path,
             "-y",
             "-i", input_path
         ]
-        
+
         # 根据resize_mode添加相应的缩放滤镜
         if resize_mode == 'fit':
             scale_filter = f"scale={width}:{height}:force_original_aspect_ratio=decrease,pad={width}:{height}:(ow-iw)/2:(oh-ih)/2:black"
@@ -401,11 +422,11 @@ def scale_video(input_path: str, output_path: str, width: int, height: int, resi
             scale_filter = f"scale={width}:{height}:force_original_aspect_ratio=increase,crop={width}:{height}"
         else:  # stretch
             scale_filter = f"scale={width}:{height}"
-        
+
         scale_cmd.extend([
             "-vf", scale_filter,
         ])
-        
+
         # 根据音频存在情况设置音频参数
         if has_audio:
             # 复制音频流，确保不丢失
@@ -413,9 +434,9 @@ def scale_video(input_path: str, output_path: str, width: int, height: int, resi
         else:
             # 没有音频时禁用音频
             scale_cmd.append("-an")
-        
+
         scale_cmd.append(output_path)
-        
+
         scale_result = subprocess.run(
             scale_cmd,
             stdout=subprocess.PIPE,
@@ -423,15 +444,15 @@ def scale_video(input_path: str, output_path: str, width: int, height: int, resi
             text=True,
             check=False
         )
-        
+
         return scale_result.returncode == 0 and os.path.exists(output_path), scale_result.stderr
     except Exception as e:
         error(f"调整视频尺寸失败: {str(e)}")
         return False, str(e)
 
 
-def apply_xfade_transition(video1_path: str, video2_path: str, output_path: str, transition_type: str, 
-                          transition_duration: float, offset: float, ffmpeg_path: str = "ffmpeg") -> bool | tuple[bool, str]:
+def apply_xfade_transition(video1_path: str, video2_path: str, output_path: str, transition_type: str,
+                           transition_duration: float, offset: float, ffmpeg_path: str = "ffmpeg") -> bool | tuple[bool, str]:
     """
     使用xfade滤镜应用转场效果
     
@@ -452,24 +473,24 @@ def apply_xfade_transition(video1_path: str, video2_path: str, output_path: str,
         if not video1_path or not isinstance(video1_path, str):
             error("第一个视频路径必须是有效的字符串")
             return False, "第一个视频路径无效"
-            
+
         if not video2_path or not isinstance(video2_path, str):
             error("第二个视频路径必须是有效的字符串")
             return False, "第二个视频路径无效"
-            
+
         if not output_path or not isinstance(output_path, str):
             error("输出路径必须是有效的字符串")
             return False, "输出路径无效"
-            
+
         # 验证视频文件是否存在
         if not os.path.exists(video1_path):
             error(f"第一个视频文件不存在: {video1_path}")
             return False, "第一个视频文件不存在"
-            
+
         if not os.path.exists(video2_path):
             error(f"第二个视频文件不存在: {video2_path}")
             return False, "第二个视频文件不存在"
-            
+
         # 确保输出目录存在
         try:
             output_dir = os.path.dirname(output_path)
@@ -479,29 +500,9 @@ def apply_xfade_transition(video1_path: str, video2_path: str, output_path: str,
             error(f"创建输出目录失败: {str(e)}")
             return False, f"创建输出目录失败: {str(e)}"
         # 检查每个视频是否有音频流
-        has_audio1 = False
-        has_audio2 = False
-        
-        try:
-            probe_cmd1 = [
-                ffmpeg_path, '-v', 'error', '-show_streams', '-select_streams', 'a',
-                '-of', 'default=noprint_wrappers=1:nokey=1', video1_path
-            ]
-            result1 = subprocess.run(probe_cmd1, capture_output=True, text=True, check=False)
-            has_audio1 = len(result1.stdout.strip()) > 0
-        except Exception:
-            pass
-            
-        try:
-            probe_cmd2 = [
-                ffmpeg_path, '-v', 'error', '-show_streams', '-select_streams', 'a',
-                '-of', 'default=noprint_wrappers=1:nokey=1', video2_path
-            ]
-            result2 = subprocess.run(probe_cmd2, capture_output=True, text=True, check=False)
-            has_audio2 = len(result2.stdout.strip()) > 0
-        except Exception:
-            pass
-        
+        has_audio1 = has_audio_info(video1_path)
+        has_audio2 = has_audio_info(video2_path)
+
         # 构建命令
         merge_cmd = [
             ffmpeg_path,
@@ -509,14 +510,14 @@ def apply_xfade_transition(video1_path: str, video2_path: str, output_path: str,
             "-i", video1_path,
             "-i", video2_path
         ]
-        
+
         # 根据音频存在情况构建滤镜
         filter_complex = []
         filter_complex.append(f"[0:v][1:v]xfade=transition={transition_type}:duration={transition_duration}:offset={offset}[v]")
-        
+
         # 检查是否有至少一个视频有音频
         has_any_audio = has_audio1 or has_audio2
-        
+
         # 根据音频存在情况构建音频处理
         if has_audio1 and has_audio2:
             # 两个视频都有音频，添加音频转场
@@ -527,17 +528,17 @@ def apply_xfade_transition(video1_path: str, video2_path: str, output_path: str,
         elif has_audio2:
             # 只有第二个视频有音频，直接映射第二个音频
             filter_complex.append("[1:a]asetpts=PTS[a]")
-        
+
         merge_cmd.extend(["-filter_complex", ";".join(filter_complex)])
         merge_cmd.extend(["-map", "[v]"])
-        
+
         # 如果有任何音频，映射音频输出
         if has_any_audio:
             merge_cmd.extend(["-map", "[a]"])
         else:
             # 否则禁用音频输出
             merge_cmd.append("-an")
-        
+
         # 添加视频编码参数
         merge_cmd.extend([
             "-c:v", "libx264",
@@ -545,19 +546,19 @@ def apply_xfade_transition(video1_path: str, video2_path: str, output_path: str,
             "-crf", "23",
             "-r", "30"
         ])
-        
+
         # 如果有任何音频，添加音频编码参数
         if has_any_audio:
             merge_cmd.extend([
                 "-c:a", "aac",
                 "-b:a", "128k"
             ])
-        
+
         merge_cmd.extend([
             "-movflags", "+faststart",
             output_path
         ])
-        
+
         merge_result = subprocess.run(
             merge_cmd,
             stdout=subprocess.PIPE,
@@ -565,15 +566,15 @@ def apply_xfade_transition(video1_path: str, video2_path: str, output_path: str,
             text=True,
             check=False
         )
-        
+
         return merge_result.returncode == 0 and os.path.exists(output_path), merge_result.stderr
     except Exception as e:
         error(f"应用xfade转场失败: {str(e)}")
         return False, str(e)
 
 
-def apply_basic_transition(video1_path: str, video2_path: str, output_path: str, transition_duration: float, 
-                          temp_dir: str, ffmpeg_path: str = "ffmpeg") -> bool | tuple[bool, str]:
+def apply_basic_transition(video1_path: str, video2_path: str, output_path: str, transition_duration: float,
+                           temp_dir: str, ffmpeg_path: str = "ffmpeg") -> bool | tuple[bool, str]:
     """
     使用基础的淡入淡出方案应用转场效果
     
@@ -593,28 +594,28 @@ def apply_basic_transition(video1_path: str, video2_path: str, output_path: str,
         if not video1_path or not isinstance(video1_path, str):
             error("第一个视频路径必须是有效的字符串")
             return False, "第一个视频路径无效"
-            
+
         if not video2_path or not isinstance(video2_path, str):
             error("第二个视频路径必须是有效的字符串")
             return False, "第二个视频路径无效"
-            
+
         if not output_path or not isinstance(output_path, str):
             error("输出路径必须是有效的字符串")
             return False, "输出路径无效"
-            
+
         if not temp_dir or not isinstance(temp_dir, str):
             error("临时目录路径必须是有效的字符串")
             return False, "临时目录路径无效"
-            
+
         # 验证视频文件是否存在
         if not os.path.exists(video1_path):
             error(f"第一个视频文件不存在: {video1_path}")
             return False, "第一个视频文件不存在"
-            
+
         if not os.path.exists(video2_path):
             error(f"第二个视频文件不存在: {video2_path}")
             return False, "第二个视频文件不存在"
-            
+
         # 确保目录存在
         try:
             os.makedirs(temp_dir, exist_ok=True)
@@ -624,85 +625,41 @@ def apply_basic_transition(video1_path: str, video2_path: str, output_path: str,
         except Exception as e:
             error(f"创建目录失败: {str(e)}")
             return False, f"创建目录失败: {str(e)}"
-        
+
         # 检查视频是否有音频（使用JSON格式获取更准确的信息）
-        has_audio1 = False
-        has_audio2 = False
-        
-        try:
-            # 使用JSON格式获取流信息，更准确地检测音频
-            probe_cmd1 = [
-                ffmpeg_path, '-v', 'error', '-show_streams', 
-                '-select_streams', 'a', '-of', 'json', video1_path
-            ]
-            result1 = subprocess.run(probe_cmd1, capture_output=True, text=True, check=False)
-            # 检查返回码和输出内容中是否包含音频流信息
-            if result1.returncode == 0 and '"streams": [' in result1.stdout:
-                try:
-                    import json
-                    data = json.loads(result1.stdout)
-                    has_audio1 = any(stream.get('codec_type') == 'audio' for stream in data.get('streams', []))
-                except:
-                    # 如果JSON解析失败，退回到简单检查
-                    has_audio1 = len(result1.stdout.strip()) > 0
-            debug(f"基础转场 - 视频1 {video1_path} 音频检测结果: {has_audio1}")
-        except Exception as e:
-            debug(f"基础转场 - 检查视频1音频流失败: {str(e)}")
-            # 失败时默认假设可能有音频，以确保不丢失声音
-            has_audio1 = True
-            
-        try:
-            # 使用JSON格式获取流信息，更准确地检测音频
-            probe_cmd2 = [
-                ffmpeg_path, '-v', 'error', '-show_streams', 
-                '-select_streams', 'a', '-of', 'json', video2_path
-            ]
-            result2 = subprocess.run(probe_cmd2, capture_output=True, text=True, check=False)
-            # 检查返回码和输出内容中是否包含音频流信息
-            if result2.returncode == 0 and '"streams": [' in result2.stdout:
-                try:
-                    import json
-                    data = json.loads(result2.stdout)
-                    has_audio2 = any(stream.get('codec_type') == 'audio' for stream in data.get('streams', []))
-                except:
-                    # 如果JSON解析失败，退回到简单检查
-                    has_audio2 = len(result2.stdout.strip()) > 0
-            debug(f"基础转场 - 视频2 {video2_path} 音频检测结果: {has_audio2}")
-        except Exception as e:
-            debug(f"基础转场 - 检查视频2音频流失败: {str(e)}")
-            # 失败时默认假设可能有音频，以确保不丢失声音
-            has_audio2 = True
-            
+        has_audio1 = has_audio_info(video1_path)
+        has_audio2 = has_audio_info(video2_path)
+
         # 检查是否有至少一个视频有音频
         has_any_audio = has_audio1 or has_audio2
         debug(f"基础转场 - 是否有任何音频需要保留: {has_any_audio}")
-        
+
         # 1. 为第一个视频添加淡出效果
         first_fade_out = os.path.join(temp_dir, f"fadeout_{str(uuid.uuid4())[:8]}.mp4")
         current_duration = get_video_duration(video1_path, ffmpeg_path, 3.0)
-        
+
         fadeout_cmd = [
             ffmpeg_path,
             "-y",
             "-i", video1_path,
-            "-vf", f"fade=t=out:st={current_duration-transition_duration}:d={transition_duration}",
+            "-vf", f"fade=t=out:st={current_duration - transition_duration}:d={transition_duration}",
         ]
-        
+
         # 只有当视频有音频时才添加音频滤镜
         if has_audio1:
             fadeout_cmd.extend([
-                "-af", f"afade=t=out:st={current_duration-transition_duration}:d={transition_duration}",
+                "-af", f"afade=t=out:st={current_duration - transition_duration}:d={transition_duration}",
             ])
         else:
             # 没有音频时禁用音频
             fadeout_cmd.append("-an")
-        
+
         fadeout_cmd.extend([
             "-c:v", "libx264",
             "-preset", "medium",
             "-crf", "23",
         ])
-        
+
         # 只有当视频有音频时才添加音频编码参数
         if has_audio1:
             fadeout_cmd.extend([
@@ -711,10 +668,10 @@ def apply_basic_transition(video1_path: str, video2_path: str, output_path: str,
                 # 确保音频同步
                 "-async", "1"
             ])
-        
+
         fadeout_cmd.append(first_fade_out)
         debug(f"执行淡出命令: {' '.join(fadeout_cmd)}")
-        
+
         fadeout_result = subprocess.run(
             fadeout_cmd,
             stdout=subprocess.PIPE,
@@ -722,21 +679,21 @@ def apply_basic_transition(video1_path: str, video2_path: str, output_path: str,
             text=True,
             check=False
         )
-        
+
         if fadeout_result.returncode != 0 or not os.path.exists(first_fade_out):
             debug(f"淡出命令失败: {fadeout_result.stderr}")
             return False, fadeout_result.stderr
-        
+
         # 2. 为第二个视频添加淡入效果
         second_fade_in = os.path.join(temp_dir, f"fadein_{str(uuid.uuid4())[:8]}.mp4")
-        
+
         fadein_cmd = [
             ffmpeg_path,
             "-y",
             "-i", video2_path,
             "-vf", f"fade=t=in:st=0:d={transition_duration}",
         ]
-        
+
         # 只有当视频有音频时才添加音频滤镜
         if has_audio2:
             fadein_cmd.extend([
@@ -745,13 +702,13 @@ def apply_basic_transition(video1_path: str, video2_path: str, output_path: str,
         else:
             # 没有音频时禁用音频
             fadein_cmd.append("-an")
-        
+
         fadein_cmd.extend([
             "-c:v", "libx264",
             "-preset", "medium",
             "-crf", "23",
         ])
-        
+
         # 只有当视频有音频时才添加音频编码参数
         if has_audio2:
             fadein_cmd.extend([
@@ -760,10 +717,10 @@ def apply_basic_transition(video1_path: str, video2_path: str, output_path: str,
                 # 确保音频同步
                 "-async", "1"
             ])
-        
+
         fadein_cmd.append(second_fade_in)
         debug(f"执行淡入命令: {' '.join(fadein_cmd)}")
-        
+
         fadein_result = subprocess.run(
             fadein_cmd,
             stdout=subprocess.PIPE,
@@ -771,20 +728,20 @@ def apply_basic_transition(video1_path: str, video2_path: str, output_path: str,
             text=True,
             check=False
         )
-        
+
         if fadein_result.returncode != 0 or not os.path.exists(second_fade_in):
             # 清理
             if os.path.exists(first_fade_out):
                 os.remove(first_fade_out)
             debug(f"淡入命令失败: {fadein_result.stderr}")
             return False, fadein_result.stderr
-        
+
         # 3. 使用concat协议合并两个处理后的视频
         concat_list = os.path.join(temp_dir, f"concat_list_{str(uuid.uuid4())[:8]}.txt")
         with open(concat_list, 'w', encoding='utf-8') as f:
             f.write(f"file '{os.path.abspath(first_fade_out)}'\n")
             f.write(f"file '{os.path.abspath(second_fade_in)}'\n")
-        
+
         # 构建合并命令
         concat_cmd = [
             ffmpeg_path,
@@ -793,7 +750,7 @@ def apply_basic_transition(video1_path: str, video2_path: str, output_path: str,
             "-safe", "0",
             "-i", concat_list
         ]
-        
+
         # 根据是否有音频设置不同的合并策略
         if has_any_audio:
             # 如果有音频，分别指定视频和音频的复制方式，确保音频正确处理
@@ -804,10 +761,10 @@ def apply_basic_transition(video1_path: str, video2_path: str, output_path: str,
         else:
             # 如果没有音频，直接复制所有流
             concat_cmd.extend(["-c", "copy"])
-            
+
         concat_cmd.append(output_path)
         debug(f"执行合并命令: {' '.join(concat_cmd)}")
-        
+
         concat_result = subprocess.run(
             concat_cmd,
             stdout=subprocess.PIPE,
@@ -815,7 +772,7 @@ def apply_basic_transition(video1_path: str, video2_path: str, output_path: str,
             text=True,
             check=False
         )
-        
+
         # 如果直接copy失败，尝试重新编码
         if concat_result.returncode != 0 or not os.path.exists(output_path):
             debug(f"直接复制合并失败，尝试重新编码: {concat_result.stderr}")
@@ -829,7 +786,7 @@ def apply_basic_transition(video1_path: str, video2_path: str, output_path: str,
                 "-preset", "medium",
                 "-crf", "23",
             ]
-            
+
             # 检查是否有任何音频需要保留
             if has_any_audio:
                 concat_cmd.extend([
@@ -843,7 +800,7 @@ def apply_basic_transition(video1_path: str, video2_path: str, output_path: str,
                 ])
             else:
                 concat_cmd.append("-an")
-            
+
             concat_cmd.extend([
                 "-movflags", "+faststart",
                 output_path
@@ -855,7 +812,7 @@ def apply_basic_transition(video1_path: str, video2_path: str, output_path: str,
                 text=True,
                 check=False
             )
-        
+
         # 清理临时文件
         if os.path.exists(first_fade_out):
             os.remove(first_fade_out)
@@ -863,7 +820,7 @@ def apply_basic_transition(video1_path: str, video2_path: str, output_path: str,
             os.remove(second_fade_in)
         if os.path.exists(concat_list):
             os.remove(concat_list)
-        
+
         return concat_result.returncode == 0 and os.path.exists(output_path), concat_result.stderr
     except Exception as e:
         error(f"应用基础转场失败: {str(e)}")
