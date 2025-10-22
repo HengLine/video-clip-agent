@@ -237,3 +237,25 @@ def create_openai_client_with_retry(max_retries: int = 3,
             retry_delay *= 1.5  # 指数退避
     
     raise RuntimeError("创建OpenAI客户端失败")
+
+
+def analyze_with_openai(self, audio_path, user_query):
+    """使用OpenAI Whisper API进行语音识别"""
+    try:
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+        with open(audio_path, "rb") as audio_file:
+            transcript = client.audio.transcriptions.create(
+                model="whisper-1",
+                file=audio_file,
+                response_format="verbose_json",
+                timestamp_granularities=["word"]
+            )
+
+        return transcript
+    except ImportError:
+        print("请安装openai: pip install openai")
+        return None
+    except Exception as e:
+        print(f"OpenAI API错误: {e}")
+        return None

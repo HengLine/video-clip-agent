@@ -22,7 +22,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 
 # 导入自定义日志模块
 from hengline.logger import debug, info
-from config.config import get_flask_secret_key, get_settings_config
+from config.config import get_flask_secret_key, get_settings_config, get_model_dir
 
 # 初始化Flask应用
 # 使用绝对路径来确保模板正确加载
@@ -38,13 +38,14 @@ from config.config import get_upload_dir, get_output_dir, get_temp_dir, get_allo
 # 使用配置模块中的辅助方法获取各种目录的绝对路径
 UPLOAD_FOLDER = get_upload_dir()
 OUTPUT_FOLDER = get_output_dir()
-TEMP_DIR = get_temp_dir()
+MODEL_DIR = get_model_dir()
 ALLOWED_EXTENSIONS = get_allowed_extensions()
 
 # 日志记录目录配置，帮助调试
 debug(f"上传目录配置为: {UPLOAD_FOLDER}")
 debug(f"输出目录配置为: {OUTPUT_FOLDER}")
-debug(f"临时目录配置为: {TEMP_DIR}")
+debug(f"模型目录配置为: {MODEL_DIR}")
+debug(f"允许的文件扩展名: {ALLOWED_EXTENSIONS}")
 
 # 从配置工具获取Flask配置
 app.secret_key = get_flask_secret_key()
