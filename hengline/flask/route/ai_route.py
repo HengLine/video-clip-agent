@@ -6,7 +6,7 @@
 """
 import json
 from flask import Blueprint, request, jsonify
-from hengline.tool.requirement_analyzer import RequirementAnalyzer
+from hengline.tool.requirement_analyzer_tool import RequirementAnalyzer
 from hengline.logger import info, error, debug
 
 app = Blueprint('ai_route', __name__)
@@ -340,10 +340,13 @@ def generate_crop_strategy():
         }), 500
 
 
+# 注意：应用裁剪API端点已弃用，裁剪策略现在通过表单提交处理
+# 保留此端点以保持向后兼容性
 @app.route('/api/ai/apply-crop', methods=['POST'])
 def apply_crop():
     """
-    应用裁剪策略到视频处理任务
+    应用裁剪策略到视频处理任务（已弃用）
+    现在裁剪策略通过表单提交直接处理
     
     请求体格式:
     {
@@ -401,10 +404,7 @@ def apply_crop():
         info(f"应用裁剪策略，任务ID: {task_id}, 文件数: {len(files)}")
         debug(f"裁剪策略详情: {json.dumps(crop_strategy, ensure_ascii=False, indent=2)}")
         
-        # 这里可以添加实际的裁剪策略应用逻辑
-        # 例如将裁剪策略保存到任务上下文或直接传递给视频处理模块
-        
-        # 返回成功响应
+        # 返回成功响应（实际裁剪策略处理现在通过表单提交完成）
         return jsonify({
             'success': True,
             'message': '裁剪策略已成功应用',

@@ -31,11 +31,17 @@ def process_video_route():
             
         # 获取用户请求参数
         user_query = request.form.get('query', '')
+        # 也尝试从其他可能的参数名获取
+        if not user_query:
+            user_query = request.form.get('user_query', '')
         if not user_query:
             return jsonify({'status': 'error', 'message': '查询参数不能为空'}), 400
 
         # 检查是否有文件上传
         files = request.files.getlist('files[]')
+        # 也尝试从其他可能的参数名获取
+        if not files or len(files) == 0:
+            files = request.files.getlist('videos')
         if not files or len(files) == 0:
             return jsonify({'status': 'error', 'message': '请上传至少一个视频文件'}), 400
 
@@ -51,9 +57,29 @@ def process_video_route():
             'user_query': user_query,
             'config': {}  # 输出目录使用video_editor中的默认设置
         }
+        
+        # 检查是否有裁剪策略信息
+        use_crop_strategy = request.form.get('use_crop_strategy', 'false')
+        if use_crop_strategy.lower() == 'true':
+            try:
+                # 获取裁剪策略JSON字符串
+                crop_strategy_str = request.form.get('crop_strategy', '{}')
+                import json
+                crop_strategy = json.loads(crop_strategy_str)
+                # 将裁剪策略添加到初始状态
+                initial_state['crop_strategy'] = crop_strategy
+                info(f"接收到裁剪策略，包含{len(crop_strategy.get('segments', []))}个片段")
+            except json.JSONDecodeError as e:
+                error(f"裁剪策略JSON解析错误: {str(e)}")
+                # 不中断处理，只是不使用裁剪策略
 
         # 执行智能体流程
         info(f"开始处理视频，查询: {user_query}")
+        # 如果有其他处理选项，也添加到日志
+        if request.form.get('priority'):
+            info(f"处理优先级: {request.form.get('priority')}")
+        if request.form.get('sort_by'):
+            info(f"排序方式: {request.form.get('sort_by')}")
         final_state = agent_graph.run(initial_state)
 
         # 根据处理结果返回响应

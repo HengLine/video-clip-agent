@@ -15,6 +15,7 @@
     "temp_dir": "data/temp",
     "output_dir": "data/output",
     "verify_dir": "data/verify",
+    "model_dir": "data/models",
     "default_transition_duration": 0.5,
     "max_concurrent_processes": 2,
     "allowed_extensions": [

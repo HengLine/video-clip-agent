@@ -9,6 +9,7 @@ import json
 import os
 import subprocess
 import uuid
+from typing import Dict, Any
 
 from hengline.logger import error, debug, warning
 from utils.log_utils import print_log_exception
@@ -24,7 +25,6 @@ def get_video_duration(video_path, ffmpeg_path: str = "ffprobe", default_duratio
     Returns:
         float: 视频时长，单位为秒
     """
-
     try:
         # 获取以秒为单位的时长  ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 input.mp4
         cmd = [ffmpeg_path, '-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', video_path]
@@ -80,12 +80,50 @@ def has_audio_info(video_path) -> bool:
                 debug(f"  比特率: {audio.get('bit_rate', '未知')}")
             return True
         else:
-            warning("没有找到音频流")
+            # warning("没有找到音频流")
             return False
 
     except Exception as e:
         error(f"错误: {e}")
         return True
+
+
+def get_audio_from_video(video_path: str, output_audio_path: str, ffmpeg_path: str = "ffmpeg") -> bool:
+    """
+    获取视频文件的音频信息
+
+    Args:
+        video_path: 视频文件路径
+        output_audio_path: 输出音频文件路径
+        ffmpeg_path: ffmpeg可执行文件路径，默认为"ffmpeg"
+
+    Returns:
+        dict: 包含音频信息的字典，如果没有音频返回空字典
+    """
+    try:
+        # 使用FFmpeg提取音频
+        cmd = [
+            ffmpeg_path, '-i', video_path,
+            '-vn',  # 不包含视频
+            '-acodec', 'pcm_s16le',  # 无损PCM格式
+            '-ar', '16000',  # 16kHz采样率
+            '-ac', '1',  # 单声道
+            '-y',  # 覆盖输出文件
+            output_audio_path
+        ]
+        debug(f"从视频提取音频: {video_path} -> {output_audio_path}")
+        result = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False
+        )
+
+        return result.returncode == 0
+    except Exception as e:
+        error(f"获取音频信息失败: {str(e)}")
+        return False
 
 
 def get_video_info(video_path: str, ffmpeg_path: str = "ffprobe") -> dict:
@@ -118,7 +156,6 @@ def get_video_info(video_path: str, ffmpeg_path: str = "ffprobe") -> dict:
         )
 
         if result.returncode == 0:
-            import json
             info_data = json.loads(result.stdout)
             if 'streams' in info_data and len(info_data['streams']) > 0:
                 stream = info_data['streams'][0]
@@ -132,6 +169,45 @@ def get_video_info(video_path: str, ffmpeg_path: str = "ffprobe") -> dict:
         error(f"获取视频信息失败: {str(e)}")
 
     return {}
+
+
+def get_video_metadata(video_path: str, probe_show_entries: str = "format:stream", probe_format: str = "json"
+                       , ffmpeg_path: str = "ffprobe") -> Any | None:
+    """
+    使用ffprobe工具读取视频元数据
+
+    Args:
+        video_path: 视频文件路径
+
+    Returns:
+        Dict[str, Any]: 原始元数据信息
+    """
+    # 构建ffprobe命令
+    cmd = [
+        ffmpeg_path,
+        '-v', 'error',
+        '-show_entries', probe_show_entries,
+        '-of', probe_format,
+        video_path
+    ]
+
+    # 执行命令
+    result = subprocess.run(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        check=False
+    )
+
+    # 解析JSON输出
+    try:
+        if result.returncode == 0:
+            info_data = json.loads(result.stdout)
+            if 'streams' in info_data and len(info_data['streams']) > 0:
+                return info_data['streams'][0]
+    except json.JSONDecodeError as e:
+        raise Exception(f"解析ffprobe输出失败: {str(e)}")
 
 
 def codec_video(temp_list_file: str, output_path: str, config, ffmpeg_path: str = "ffmpeg") -> bool | tuple[bool, str]:

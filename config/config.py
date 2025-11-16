@@ -202,6 +202,16 @@ def get_output_dir() -> str:
     os.makedirs(output_dir, exist_ok=True)
     return output_dir
 
+def get_model_dir() -> str:
+    """
+    获取模型目录的绝对路径
+    """
+    config = get_settings_config()
+    model_dir = os.path.join(get_app_root(), config.get('video_processing', {}).get('model_dir', 'data/models'))
+    # 确保目录存在
+    os.makedirs(model_dir, exist_ok=True)
+    return model_dir
+
 def get_temp_dir() -> str:
     """
     获取临时目录的绝对路径
