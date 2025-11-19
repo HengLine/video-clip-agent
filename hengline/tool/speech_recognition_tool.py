@@ -27,6 +27,37 @@ class SpeechRecognizer:
         self.recognizer.pause_threshold = 0.8  # 暂停识别阈值
         self.recognizer.dynamic_energy_threshold = True
         self.recognizer.dynamic_energy_adjustment_ratio = 1.5
+        
+        # 检查可用的语音识别引擎
+        self.available_engines = self._check_available_engines()
+        info(f"可用的语音识别引擎: {', '.join(self.available_engines)}")
+
+    def _check_available_engines(self) -> List[str]:
+        """检查可用的语音识别引擎"""
+        engines = []
+        
+        # 检查Google Speech Recognition
+        try:
+            # 创建一个测试音频片段来检查引擎可用性
+            test_audio = sr.AudioData(b'\x00\x00' * 1600, sample_rate=16000, sample_width=2)
+            # 这里只是检查方法是否存在，不实际识别
+            if hasattr(self.recognizer, 'recognize_google'):
+                engines.append("Google Speech Recognition")
+        except Exception as e:
+            debug(f"Google Speech Recognition检查失败: {e}")
+        
+        # 检查Sphinx离线识别（英文）
+        try:
+            if hasattr(self.recognizer, 'recognize_sphinx'):
+                # 尝试导入pocketsphinx来确认是否真正可用
+                import pocketsphinx
+                engines.append("Sphinx离线识别(英文)")
+        except ImportError:
+            debug("PocketSphinx未安装，离线识别不可用")
+        except Exception as e:
+            debug(f"Sphinx离线识别检查失败: {e}")
+        
+        return engines
 
     def extract_audio_from_video(self, video_path: str, output_audio_path: Optional[str] = None) -> str:
         """
@@ -125,26 +156,57 @@ class SpeechRecognizer:
                         debug("使用真实语音识别API进行转录")
                         # 检查是否成功加载了音频数据
                         if 'audio_data' in locals():
-                            try:
-                                # 尝试使用Google Speech Recognition（需要网络连接）
-                                text = self.recognizer.recognize_google(audio_data, language=language)
-                                debug(f"成功识别文本: {text}")
-                            except sr.UnknownValueError:
-                                warning("Google Speech Recognition无法理解音频")
-                                text = "[无法识别的音频内容]"
-                            except sr.RequestError as e:
-                                warning(f"无法从Google Speech Recognition服务获取结果; {e}")
-                                # 尝试离线识别选项
+                            text = None
+                            
+                            # 根据可用引擎动态构建识别方法列表
+                            recognition_methods = []
+                            
+                            if "Google Speech Recognition" in self.available_engines:
+                                recognition_methods.append(
+                                    ("Google Speech Recognition", 
+                                     lambda: self.recognizer.recognize_google(audio_data, language=language))
+                                )
+                            
+                            if "Sphinx离线识别(英文)" in self.available_engines:
+                                # 对于中文，如果离线识别不支持，使用英文作为备用
+                                sphinx_language = 'en-US' if language.startswith('zh') else language
+                                recognition_methods.append(
+                                    ("Sphinx离线识别", 
+                                     lambda: self.recognizer.recognize_sphinx(audio_data, language=sphinx_language))
+                                )
+                            
+                            # 如果没有可用引擎，添加模拟识别
+                            if not recognition_methods:
+                                warning("没有可用的语音识别引擎，使用模拟识别")
+                                recognition_methods.append(
+                                    ("模拟识别", 
+                                     lambda: f"[音频片段{i+1}的模拟转录结果]")
+                                )
+                            
+                            for method_name, method_func in recognition_methods:
                                 try:
-                                    # 检查是否有离线识别选项
-                                    if hasattr(self.recognizer, 'recognize_sphinx'):
-                                        debug("尝试使用Sphinx离线识别")
-                                        text = self.recognizer.recognize_sphinx(audio_data, language=language)
-                                    else:
-                                        raise ImportError("Sphinx离线识别不可用")
+                                    debug(f"尝试使用{method_name}")
+                                    text = method_func()
+                                    if text and text.strip():
+                                        debug(f"{method_name}成功识别文本: {text}")
+                                        # 如果使用了英文识别但原语言是中文，添加说明
+                                        if "Sphinx离线识别" in method_name and language.startswith('zh'):
+                                            text = f"[英文识别结果] {text}"
+                                        break
+                                except sr.UnknownValueError:
+                                    warning(f"{method_name}无法理解音频")
+                                    continue
+                                except sr.RequestError as e:
+                                    warning(f"{method_name}服务错误: {e}")
+                                    continue
                                 except Exception as e:
-                                    warning(f"离线识别也失败: {e}")
-                                    text = "[语音识别服务暂时不可用]"
+                                    warning(f"{method_name}出现异常: {e}")
+                                    continue
+                            
+                            # 如果所有方法都失败，使用默认文本
+                            if text is None or not text.strip():
+                                warning("所有语音识别方法都失败，使用默认文本")
+                                text = "[语音识别失败，请检查音频质量或网络连接]"
                         else:
                             warning("没有可用的音频数据进行识别")
                             text = "[无法处理的音频数据]"

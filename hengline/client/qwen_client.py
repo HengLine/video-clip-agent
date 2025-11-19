@@ -8,8 +8,8 @@
 
 from typing import Dict, Any, Optional, Callable
 
-from hengline.ai.base_client import BaseAIClient
-from hengline.ai.openai_compat import OpenAICompatibleWrapper, BaseOpenAIResponse
+from hengline.client.base_client import BaseAIClient
+from hengline.client.openai_compat import OpenAICompatibleWrapper, BaseOpenAIResponse
 from hengline.logger import debug, error
 
 
@@ -85,7 +85,7 @@ class QwenClient(BaseAIClient):
 
                 # 发送请求
                 debug(f"向通义千问发送请求: model={model}, temperature={temperature}")
-                response = cls.make_request(base_url, headers, payload)
+                response = cls.make_request(base_url + '/chat/completions', headers, payload)
 
                 # 解析响应
                 response_data = response.json()

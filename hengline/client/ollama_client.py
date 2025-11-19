@@ -8,8 +8,8 @@
 
 from typing import Dict, Any, Optional, Callable
 
-from hengline.ai.base_client import BaseAIClient
-from hengline.ai.openai_compat import OpenAICompatibleWrapper, BaseOpenAIResponse
+from hengline.client.base_client import BaseAIClient
+from hengline.client.openai_compat import OpenAICompatibleWrapper, BaseOpenAIResponse
 from hengline.logger import debug, error
 
 

@@ -119,24 +119,40 @@ def _update_ai_config_from_env(config: Dict[str, Any]) -> None:
     """
     if 'ai_model' not in config:
         config['ai_model'] = DEFAULT_CONFIG['ai_model']
-    
+
+    # 更新通用AI模型配置
+    if os.environ.get('AI_PROVIDER'):
+        config['ai_model']['provider'] = os.environ.get('AI_PROVIDER')
+
     # 更新OpenAI配置
     if os.environ.get('OPENAI_API_KEY'):
         config['ai_model']['openai']['api_key'] = os.environ.get('OPENAI_API_KEY')
     if os.environ.get('OPENAI_BASE_URL'):
         config['ai_model']['openai']['base_url'] = os.environ.get('OPENAI_BASE_URL')
+    if os.environ.get('OPENAI_MODEL'):
+        config['ai_model']['openai']['model'] = os.environ.get('OPENAI_MODEL')
     
     # 更新Qwen配置
     if os.environ.get('QWEN_API_KEY'):
         config['ai_model']['qwen']['api_key'] = os.environ.get('QWEN_API_KEY')
     if os.environ.get('QWEN_BASE_URL'):
         config['ai_model']['qwen']['base_url'] = os.environ.get('QWEN_BASE_URL')
+    if os.environ.get('QWEN_MODEL'):
+        config['ai_model']['qwen']['model'] = os.environ.get('QWEN_MODEL')
     
     # 更新DeepSeek配置
     if os.environ.get('DEEPSEEK_API_KEY'):
         config['ai_model']['deepseek']['api_key'] = os.environ.get('DEEPSEEK_API_KEY')
     if os.environ.get('DEEPSEEK_BASE_URL'):
         config['ai_model']['deepseek']['base_url'] = os.environ.get('DEEPSEEK_BASE_URL')
+    if os.environ.get('DEEPSEEK_MODEL'):
+        config['ai_model']['deepseek']['model'] = os.environ.get('DEEPSEEK_MODEL')
+
+    # 更新 ollama 配置
+    if os.environ.get('OLLAMA_MODEL'):
+        config['ai_model']['ollama']['model'] = os.environ.get('OLLAMA_MODEL')
+    if os.environ.get('OLLAMA_BASE_URL'):
+        config['ai_model']['ollama']['base_url'] = os.environ.get('OLLAMA_BASE_URL')
     
     # 更新Flask配置
     if os.environ.get('FLASK_HOST'):

@@ -204,10 +204,13 @@ def get_video_metadata(video_path: str, probe_show_entries: str = "format:stream
     try:
         if result.returncode == 0:
             info_data = json.loads(result.stdout)
-            if 'streams' in info_data and len(info_data['streams']) > 0:
-                return info_data['streams'][0]
+            # 返回完整的元数据，包含format和streams信息
+            return info_data
     except json.JSONDecodeError as e:
         raise Exception(f"解析ffprobe输出失败: {str(e)}")
+    
+    # 如果命令执行失败，返回None
+    return None
 
 
 def codec_video(temp_list_file: str, output_path: str, config, ffmpeg_path: str = "ffmpeg") -> bool | tuple[bool, str]:
@@ -241,6 +244,99 @@ def codec_video(temp_list_file: str, output_path: str, config, ffmpeg_path: str 
         framerate = config.get('framerate', 30)
         audio_bitrate = config.get('audio_bitrate', '128k')
 
+        # 检查输入视频的音频状态
+        audio_status_list = []
+        try:
+            with open(temp_list_file, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+                for line in lines:
+                    if line.strip().startswith('file '):
+                        path = line.strip().replace('file ', '', 1).strip("'\"")
+                        if os.path.exists(path):
+                            # 使用与has_audio_info相同的方法检测音频
+                            has_audio = has_audio_info(path)
+                            audio_status_list.append(has_audio)
+                            debug(f"codec_video - 视频 {os.path.basename(path)} 音频状态: {'有' if has_audio else '无'}")
+                        else:
+                            debug(f"codec_video - 视频文件不存在: {path}")
+                            audio_status_list.append(False)
+        except Exception as e:
+            debug(f"codec_video - 读取文件列表失败: {str(e)}")
+            audio_status_list = [False]  # 默认无音频
+        
+        # 如果没有检测到音频，尝试直接检测原始文件列表中的文件
+        if not any(audio_status_list) and len(lines) >= 2:
+            debug("codec_video - 重新检测音频状态...")
+            audio_status_list = []
+            for line in lines:
+                if line.strip().startswith('file '):
+                    path = line.strip().replace('file ', '', 1).strip("'\"")
+                    # 转换为绝对路径
+                    if not os.path.isabs(path):
+                        path = os.path.abspath(path)
+                    
+                    if os.path.exists(path):
+                        has_audio = has_audio_info(path)
+                        audio_status_list.append(has_audio)
+                        debug(f"codec_video - 重新检测 {os.path.basename(path)} 音频状态: {'有' if has_audio else '无'}")
+                    else:
+                        debug(f"codec_video - 视频文件仍不存在: {path}")
+                        audio_status_list.append(False)
+
+        # 分析音频状态
+        has_any_audio = any(audio_status_list)
+        all_have_audio = all(audio_status_list)
+        
+        debug(f"codec_video - 音频状态分析: 总共{len(audio_status_list)}个视频，有音频:{sum(audio_status_list)}个，无音频:{len(audio_status_list)-sum(audio_status_list)}个")
+
+        # 如果有部分视频没有音频，需要为这些视频添加静音轨道
+        if has_any_audio and not all_have_audio:
+            debug("codec_video - 检测到混合音频流，为无音频视频添加静音轨道...")
+            new_temp_list_file = temp_list_file + "_with_audio"
+            
+            try:
+                with open(new_temp_list_file, 'w', encoding='utf-8') as outfile:
+                    for i, line in enumerate(lines):
+                        if line.strip().startswith('file '):
+                            path = line.strip().replace('file ', '', 1).strip("'\"")
+                            if i < len(audio_status_list) and not audio_status_list[i]:
+                                # 为无音频视频创建带静音轨道的临时文件
+                                temp_audio_file = path.replace('.mp4', '_with_silence.mp4')
+                                
+                                # 添加静音音频轨道
+                                silence_cmd = [
+                                    ffmpeg_path, "-y",
+                                    "-i", path,
+                                    "-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=44100",
+                                    "-c:v", "copy",
+                                    "-c:a", "aac",
+                                    "-ar", "44100",
+                                    "-ac", "2",
+                                    "-b:a", "128k",
+                                    "-shortest",
+                                    temp_audio_file
+                                ]
+                                
+                                debug(f"codec_video - 为 {os.path.basename(path)} 添加静音轨道...")
+                                result = subprocess.run(silence_cmd, capture_output=True, text=True, check=False)
+                                
+                                if result.returncode == 0:
+                                    outfile.write(f"file '{temp_audio_file}'\n")
+                                    debug(f"codec_video - 成功添加静音轨道: {os.path.basename(temp_audio_file)}")
+                                else:
+                                    debug(f"codec_video - 添加静音轨道失败，使用原文件: {result.stderr}")
+                                    outfile.write(line)
+                            else:
+                                # 有音频的视频直接使用
+                                outfile.write(line)
+                
+                # 使用新的文件列表
+                temp_list_file = new_temp_list_file
+                debug("codec_video - 已创建包含静音轨道的视频列表")
+                
+            except Exception as e:
+                debug(f"codec_video - 创建静音轨道失败: {str(e)}，使用原始列表")
+
         # 基于缩放模式构建视频滤镜
         if resize_mode == 'fit':
             filter_complex = f"scale={width}:{height}:force_original_aspect_ratio=decrease,pad={width}:{height}:(ow-iw)/2:(oh-ih)/2:black"
@@ -269,16 +365,32 @@ def codec_video(temp_list_file: str, output_path: str, config, ffmpeg_path: str 
             "-video_track_timescale", str(framerate * 1000),  # 时间基准
             # 强制关键帧，确保正确连接
             "-force_key_frames", "expr:gte(t,n_forced*1)",
-            # 音频参数 - 确保音频正确处理
-            "-c:a", "aac",  # 音频编码器
-            "-b:a", audio_bitrate,  # 使用配置的音频比特率
-            # 确保文件兼容性
+        ]
+
+        # 根据音频状态设置音频参数
+        if has_any_audio:
+            # 有音频时，添加音频处理参数
+            cmd.extend([
+                "-c:a", "aac",  # 音频编码器
+                "-ar", "44100",  # 标准采样率
+                "-ac", "2",      # 立体声
+                "-b:a", audio_bitrate,  # 使用配置的音频比特率
+                # 处理音频间隙 - 为无音频片段添加静音
+                "-af", "aresample=async=1:first_pts=0" if not all_have_audio else "aresample=async=1"
+            ])
+            debug(f"codec_video - 使用策略: {'所有视频都有音频' if all_have_audio else '部分视频有音频，添加静音处理'}")
+        else:
+            # 无音频时，不添加音频流
+            debug("codec_video - 使用策略: 所有视频都无音频，不添加音频流")
+
+        # 确保文件兼容性
+        cmd.extend([
             "-movflags", "+faststart",
             # 输出文件路径
             output_path
-        ]
+        ])
 
-        debug(f"策略1命令: {' '.join(cmd)}")
+        debug(f"codec_video命令: {' '.join(cmd)}")
 
         result = subprocess.run(
             cmd,
@@ -296,7 +408,7 @@ def codec_video(temp_list_file: str, output_path: str, config, ffmpeg_path: str 
         return False, str(e)
 
 
-def merge_videos(merge_list_file, output_path: str, ffmpeg_path: str = "ffmpeg") -> bool | tuple[bool, str]:
+def merge_videos(merge_list_file, output_path: str, ffmpeg_path: str = "ffmpeg", clip_mapping=None) -> bool | tuple[bool, str]:
     """
     合并多个视频文件为一个视频文件
 
@@ -304,6 +416,7 @@ def merge_videos(merge_list_file, output_path: str, ffmpeg_path: str = "ffmpeg")
         merge_list_file: 视频文件路径列表
         output_path: 输出视频文件路径
         ffmpeg_path: ffmpeg可执行文件路径，默认为"ffmpeg"
+        clip_mapping: 片段映射信息，用于保持顺序一致性
 
     Returns:
         bool: 合并是否成功
@@ -322,22 +435,60 @@ def merge_videos(merge_list_file, output_path: str, ffmpeg_path: str = "ffmpeg")
         except Exception as e:
             debug(f"读取合并列表文件失败: {str(e)}")
 
-        # 检查是否有任何视频包含音频
-        has_any_audio = False
+        # 检查每个视频的音频情况，确保音频流一致性
+        audio_status_list = []
         for video_path in video_paths:
             if os.path.exists(video_path):
-                try:
-                    probe_cmd = [
-                        ffmpeg_path, '-v', 'error', '-show_streams', '-select_streams', 'a',
-                        '-of', 'default=noprint_wrappers=1:nokey=1', video_path
-                    ]
-                    result = subprocess.run(probe_cmd, capture_output=True, text=True, check=False)
-                    if len(result.stdout.strip()) > 0:
-                        has_any_audio = True
-                        debug(f"检测到音频: {video_path}")
-                        break  # 只要有一个视频有音频就可以了
-                except Exception as e:
-                    debug(f"检查视频 {video_path} 音频流失败: {str(e)}")
+                # 使用与has_audio_info相同的方法检测音频
+                has_audio = has_audio_info(video_path)
+                audio_status_list.append(has_audio)
+                debug(f"视频 {os.path.basename(video_path)} 音频状态: {'有' if has_audio else '无'}")
+            else:
+                debug(f"视频文件不存在: {video_path}")
+                audio_status_list.append(False)
+
+        # 分析音频状态
+        has_any_audio = any(audio_status_list)
+        all_have_audio = all(audio_status_list)
+        
+        debug(f"音频状态分析: 总共{len(video_paths)}个视频，有音频:{sum(audio_status_list)}个，无音频:{len(audio_status_list)-sum(audio_status_list)}个")
+
+        # 如果有部分视频没有音频，为这些视频添加背景音乐
+        if has_any_audio and not all_have_audio:
+            debug("检测到混合音频流，为无音频视频添加背景音乐...")
+            from utils.background_audio_utils import process_video_audio_with_background
+            
+            try:
+                # 创建临时目录处理音频
+                temp_audio_dir = os.path.join(os.path.dirname(output_path), "temp_audio_processing")
+                os.makedirs(temp_audio_dir, exist_ok=True)
+                
+                # 处理视频音频：有音频的保持原样，无音频的添加背景音乐
+                processed_videos, audio_mapping = process_video_audio_with_background(video_paths, temp_audio_dir, clip_mapping)
+                
+                # 验证音频映射关系，确保顺序正确
+                if len(processed_videos) != len(video_paths):
+                    error(f"处理后的视频数量({len(processed_videos)})与原始视频数量({len(video_paths)})不匹配")
+                    return False, "音频处理导致视频数量不匹配"
+                
+                # 创建新的合并列表文件，保持原始顺序
+                new_merge_list_file = merge_list_file + "_with_bg_audio"
+                with open(new_merge_list_file, 'w', encoding='utf-8') as outfile:
+                    for i, processed_video in enumerate(processed_videos):
+                        # 使用绝对路径并转换为正斜杠格式，确保FFmpeg兼容性
+                        abs_path = os.path.abspath(processed_video).replace('\\', '/')
+                        outfile.write(f"file '{abs_path}'\n")
+                        
+                        # 记录映射关系用于调试
+                        original_video = video_paths[i] if i < len(video_paths) else "unknown"
+                        debug(f"音频映射: {os.path.basename(original_video)} -> {os.path.basename(processed_video)} (索引: {i})")
+                
+                # 使用新的文件列表
+                merge_list_file = new_merge_list_file
+                debug("已创建包含背景音频的视频列表，保持原始顺序")
+                
+            except Exception as e:
+                debug(f"处理背景音频失败: {str(e)}，使用原始列表")
 
         # 构建合并命令
         merge_cmd = [
@@ -348,16 +499,52 @@ def merge_videos(merge_list_file, output_path: str, ffmpeg_path: str = "ffmpeg")
             "-i", merge_list_file,
         ]
 
-        # 根据是否有音频设置不同的合并策略
-        if has_any_audio:
-            # 有音频时，分别指定视频和音频的编码方式
+        # 根据音频状态设置不同的合并策略
+        if all_have_audio:
+            # 所有视频都有音频，可以直接复制
             merge_cmd.extend([
                 "-c:v", "copy",  # 复制视频流
-                "-c:a", "copy"  # 复制音频流
+                "-c:a", "copy"   # 复制音频流
             ])
+            debug("使用策略：所有视频都有音频，复制音视频流")
+        elif has_any_audio and not all_have_audio:
+            # 混合音频流（已为无音频视频添加背景音频），使用转码确保兼容性
+            merge_cmd.extend([
+                "-c:v", "libx264",  # 转码视频流确保兼容性
+                "-preset", "fast",  # 快速预设
+                "-crf", "23",       # 合理的质量
+                "-r", "30",         # 标准帧率
+                "-c:a", "aac",      # 转码音频流为AAC格式确保兼容性
+                "-ar", "44100",     # 标准采样率
+                "-ac", "2",         # 立体声
+                "-b:a", "128k",     # 音频比特率
+                # 移除可能导致音频不同步的参数，保持原始音频时间戳
+                "-fflags", "+genpts",  # 生成新的时间戳但不忽略原始时间戳
+                "-vsync", "1",      # 确保视频同步
+            ])
+            debug("使用策略：混合音频流，转码所有流确保兼容性，保持音频时间戳连续性")
+        elif has_any_audio:
+            # 部分视频有音频，使用更复杂的方法确保音频兼容性
+            # 先转码所有视频，确保音频格式一致
+            merge_cmd.extend([
+                "-c:v", "libx264",  # 转码视频流确保兼容性
+                "-preset", "fast",  # 快速预设
+                "-crf", "23",       # 合理的质量
+                "-r", "30",         # 标准帧率
+                "-c:a", "aac",      # 转码音频流为AAC格式
+                "-ar", "44100",     # 标准采样率
+                "-ac", "2",         # 立体声
+                "-b:a", "128k",     # 音频比特率
+                # 保持音频时间戳连续性，不重置时间戳
+                "-fflags", "+genpts",  # 生成新的时间戳但保持连续性
+            ])
+            debug("使用策略：部分视频有音频，转码所有流确保兼容性，保持音频时间戳")
         else:
-            # 没有音频时，直接复制所有流
-            merge_cmd.extend(["-c", "copy"])
+            # 所有视频都没有音频，只复制视频流
+            merge_cmd.extend([
+                "-c:v", "copy"   # 只复制视频流
+            ])
+            debug("使用策略：所有视频都无音频，只复制视频流")
 
         merge_cmd.append(output_path)
 
@@ -371,6 +558,22 @@ def merge_videos(merge_list_file, output_path: str, ffmpeg_path: str = "ffmpeg")
             text=True,
             check=False
         )
+
+        # 清理临时文件
+        if has_any_audio and not all_have_audio:
+            try:
+                import shutil
+                temp_audio_dir = os.path.join(os.path.dirname(output_path), "temp_audio_processing")
+                if os.path.exists(temp_audio_dir):
+                    shutil.rmtree(temp_audio_dir)
+                    debug("已清理临时音频处理目录")
+                
+                new_merge_list_file = merge_list_file
+                if os.path.exists(new_merge_list_file):
+                    os.remove(new_merge_list_file)
+                    debug("已清理临时列表文件")
+            except Exception as e:
+                debug(f"清理临时文件失败: {str(e)}")
 
         return merge_result.returncode == 0, merge_result.stderr
 
@@ -398,21 +601,67 @@ def transcode_merge_video(merge_list_file, output_path: str, config, ffmpeg_path
         framerate = config.get('framerate', 30)
         audio_bitrate = config.get('audio_bitrate', '128k')
 
-        # 构建基本转码命令，使用合理的默认参数
+        # 检查输入视频的音频状态
+        audio_status_list = []
+        try:
+            with open(merge_list_file, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+                for line in lines:
+                    if line.strip().startswith('file '):
+                        path = line.strip().replace('file ', '', 1).strip("'\"")
+                        if os.path.exists(path):
+                            # 使用与has_audio_info相同的方法检测音频
+                            has_audio = has_audio_info(path)
+                            audio_status_list.append(has_audio)
+                            debug(f"transcode_merge_video - 视频 {os.path.basename(path)} 音频状态: {'有' if has_audio else '无'}")
+                        else:
+                            debug(f"transcode_merge_video - 视频文件不存在: {path}")
+                            audio_status_list.append(False)
+        except Exception as e:
+            debug(f"transcode_merge_video - 读取文件列表失败: {str(e)}")
+            audio_status_list = [False]  # 默认无音频
+
+        # 分析音频状态
+        has_any_audio = any(audio_status_list)
+        all_have_audio = all(audio_status_list)
+        
+        debug(f"transcode_merge_video - 音频状态分析: 总共{len(audio_status_list)}个视频，有音频:{sum(audio_status_list)}个，无音频:{len(audio_status_list)-sum(audio_status_list)}个")
+
+        # 构建转码合并命令，确保音视频完全同步
         transcode_merge_cmd = [
             ffmpeg_path,
-            "-y",
+            "-y",  # 覆盖输出文件
             "-f", "concat",
             "-safe", "0",
             "-i", merge_list_file,
-            # 重新转码确保兼容性
+            # 视频编码设置
             "-c:v", codec,
             "-preset", preset,
             "-crf", str(crf),
-            "-r", str(framerate),
-            "-c:a", "aac",
-            "-b:a", audio_bitrate
+            "-r", str(framerate),  # 固定帧率确保同步
+            "-pix_fmt", "yuv420p",
         ]
+
+        # 根据音频状态设置音频参数
+        if has_any_audio:
+            # 有音频时，添加音频处理参数
+            transcode_merge_cmd.extend([
+                # 音频编码设置，确保同步
+                "-c:a", "aac",
+                "-ar", "44100",
+                "-ac", "2",
+                "-b:a", audio_bitrate,
+                # 保持音频时间戳连续性，不重置时间戳
+                "-fflags", "+genpts",  # 生成新的时间戳但保持连续性
+                "-vsync", "1",      # 确保视频同步
+                # 确保时间戳连续性
+                "-avoid_negative_ts", "1",
+                "-max_muxing_queue_size", "1024"
+            ])
+            debug(f"transcode_merge_video - 使用策略: {'所有视频都有音频' if all_have_audio else '部分视频有音频，保持音频时间戳连续性'}")
+        else:
+            # 无音频时，不添加音频流
+            debug("transcode_merge_video - 使用策略: 所有视频都无音频，不添加音频流")
 
         # 获取转码参数配置
         transcode_params = config.get('transcode_params', {})
@@ -420,13 +669,11 @@ def transcode_merge_video(merge_list_file, output_path: str, config, ffmpeg_path
 
         # 添加movflags参数
         if movflags:
-            transcode_merge_cmd.extend([
-                "-movflags", movflags
-            ])
+            transcode_merge_cmd.extend(["-movflags", movflags])
 
         transcode_merge_cmd.append(output_path)
 
-        debug(f"执行转码合并命令: {' '.join(transcode_merge_cmd)}")
+        debug(f"transcode_merge_video命令: {' '.join(transcode_merge_cmd)}")
 
         transcode_merge_result = subprocess.run(
             transcode_merge_cmd,
@@ -589,21 +836,22 @@ def apply_xfade_transition(video1_path: str, video2_path: str, output_path: str,
 
         # 根据音频存在情况构建滤镜
         filter_complex = []
-        filter_complex.append(f"[0:v][1:v]xfade=transition={transition_type}:duration={transition_duration}:offset={offset}[v]")
+        # 首先同步两个视频的时间基和帧率，然后应用xfade
+        filter_complex.append(f"[0:v]settb=AVTB,fps=30[v1];[1:v]settb=AVTB,fps=30[v2];[v1][v2]xfade=transition={transition_type}:duration={transition_duration}:offset={offset}[v]")
 
         # 检查是否有至少一个视频有音频
         has_any_audio = has_audio1 or has_audio2
 
         # 根据音频存在情况构建音频处理
         if has_audio1 and has_audio2:
-            # 两个视频都有音频，添加音频转场
-            filter_complex.append(f"[0:a][1:a]acrossfade=d={transition_duration}[a]")
+            # 两个视频都有音频，使用concat滤镜按顺序连接音频
+            filter_complex.append(f"[0:a][1:a]concat=n=2:v=0:a=1[a]")
         elif has_audio1:
-            # 只有第一个视频有音频，直接映射第一个音频
-            filter_complex.append("[0:a]asetpts=PTS+offset/TB[a]")
+            # 只有第一个视频有音频，直接映射音频
+            filter_complex.append("[0:a]acopy[a]")
         elif has_audio2:
-            # 只有第二个视频有音频，直接映射第二个音频
-            filter_complex.append("[1:a]asetpts=PTS[a]")
+            # 只有第二个视频有音频，直接映射音频
+            filter_complex.append("[1:a]acopy[a]")
 
         merge_cmd.extend(["-filter_complex", ";".join(filter_complex)])
         merge_cmd.extend(["-map", "[v]"])

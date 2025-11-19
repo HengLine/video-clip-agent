@@ -2,9 +2,9 @@
 """测试响应转换功能的脚本"""
 import os
 import sys
-from hengline.ai.ai_client import global_ai_client
+from hengline.client.ai_client import global_ai_client
 from hengline.tool.requirement_analyzer import get_requirement_analyzer
-from hengline.ai.client_factory import convert_response
+from hengline.client.client_factory import convert_response
 # 添加项目根目录到Python路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # 导入日志模块以便查看详细信息

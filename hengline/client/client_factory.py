@@ -14,11 +14,11 @@ from typing import Any, Dict, Optional
 from openai import OpenAI
 
 from config.config import get_settings_config
-from hengline.ai.deepseek_client import DeepSeekClient
-from hengline.ai.ollama_client import OllamaClient
+from hengline.client.deepseek_client import DeepSeekClient
+from hengline.client.ollama_client import OllamaClient
 # 导入各个厂商的客户端实现
-from hengline.ai.openai_client import OpenAIClient
-from hengline.ai.qwen_client import QwenClient
+from hengline.client.openai_client import OpenAIClient
+from hengline.client.qwen_client import QwenClient
 from hengline.logger import error, debug
 
 

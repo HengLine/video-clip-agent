@@ -80,7 +80,7 @@ def analyze_emotions(video_path: str) -> Dict[str, List[Tuple[float, float]]]:
 
 
 @tool
-def transcribe_speech(video_path: str) -> List[Dict[str, Any]]:
+def transcribe_speech(video_path: str) -> List[Dict[str, Any]] | None:
     """提取视频中的语音并转文字"""
     debug(f"执行语音转文字: {video_path}")
     try:
@@ -270,11 +270,22 @@ class ContentAnalyzerAgent(Runnable):
                 # 场景检测 - 通常总是需要的
                 if 'scene_detection' in focus_areas:
                     try:
-                        video_analysis['scenes'] = detect_scenes(video_path)
-                        clip_points[video_path] = video_analysis['scenes']
+                        scenes_result = detect_scenes(video_path)
+                        video_analysis['scenes'] = scenes_result
+                        # 从场景检测结果中提取selected_scenes列表
+                        if isinstance(scenes_result, dict) and 'selected_scenes' in scenes_result:
+                            clip_points[video_path] = scenes_result['selected_scenes']
+                        elif isinstance(scenes_result, list):
+                            # 如果直接返回列表，使用列表本身
+                            clip_points[video_path] = scenes_result
+                        else:
+                            # 如果格式不正确，使用空列表
+                            warning(f"场景检测返回格式错误: {type(scenes_result)}")
+                            clip_points[video_path] = []
                     except Exception as e:
                         warning(f"场景检测失败: {str(e)}")
                         video_analysis['scenes'] = []
+                        clip_points[video_path] = []
 
                 # 物体检测
                 if 'object_detection' in focus_areas:
@@ -554,8 +565,16 @@ class ContentAnalyzerAgent(Runnable):
             if not clip_points:
                 scenes = analysis_data.get('scenes', [])
                 # 确保scenes是列表类型
-                if isinstance(scenes, list):
+                if isinstance(scenes, dict) and 'selected_scenes' in scenes:
+                    # 如果scenes是字典，提取selected_scenes
+                    clip_points = scenes['selected_scenes']
+                elif isinstance(scenes, list):
+                    # 如果scenes是列表，直接使用
                     clip_points = scenes
+                else:
+                    # 如果格式不正确，使用空列表
+                    debug(f"场景数据格式不正确: {type(scenes)}")
+                    clip_points = []
 
             # 去重和排序
             try:
@@ -622,7 +641,7 @@ class ContentAnalyzerAgent(Runnable):
             return updated_state
 
     # 实现Runnable接口的invoke方法
-    def invoke(self, input_state: Dict[str, Any], config: Optional[Dict] = None) -> Dict[str, Any]:
+    def invoke(self, input_state: Dict[str, Any], config: Optional[Dict] = None, **kwargs) -> Dict[str, Any]:
         """
         实现langchain的Runnable接口
         支持标准的invoke调用模式

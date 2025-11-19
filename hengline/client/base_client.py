@@ -11,7 +11,7 @@ import requests
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, Callable
 
-from hengline.ai.openai_compat import OpenAICompatibleWrapper, BaseOpenAIResponse
+from hengline.client.openai_compat import OpenAICompatibleWrapper, BaseOpenAIResponse
 from hengline.logger import info, error
 
 

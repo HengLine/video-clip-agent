@@ -36,6 +36,9 @@ colorama>=0.4.6  # 控制台彩色输出
 # 环境变量管理
 python-dotenv>=1.0.0
 
+# YAML配置文件处理
+PyYAML>=6.0
+
 # 其他依赖
 requests>=2.25.0,<3.0.0  # 保持稳定版本
 urllib3<2.1,>=1.25.4  # 与botocore兼容

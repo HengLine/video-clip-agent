@@ -7,7 +7,7 @@
 from typing import Dict, Any
 
 from config.config import get_settings_config
-from hengline.ai.ai_client import global_ai_client
+from hengline.client.ai_client import global_ai_client
 from hengline.logger import info, error
 
 

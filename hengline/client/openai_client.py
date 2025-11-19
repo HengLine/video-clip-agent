@@ -9,8 +9,8 @@ import httpx
 
 from openai import OpenAI
 from hengline.logger import debug, info, error
-from hengline.ai.base_client import BaseAIClient
-from hengline.ai.openai_compat import OpenAICompatibleWrapper, BaseOpenAIResponse
+from hengline.client.base_client import BaseAIClient
+from hengline.client.openai_compat import OpenAICompatibleWrapper, BaseOpenAIResponse
 
 
 class OpenAIClient(BaseAIClient):

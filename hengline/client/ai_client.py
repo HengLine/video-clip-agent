@@ -9,8 +9,8 @@ import time
 from typing import Dict, Any, Optional
 
 from config.config import get_settings_config
-from config.prompt import get_generate_video_prompt, get_user_requirement_prompt
-from hengline.ai.client_factory import get_ai_client, convert_response
+from hengline.prompt.prompt import get_generate_video_prompt, get_user_requirement_prompt
+from hengline.client.client_factory import get_ai_client, convert_response
 from hengline.logger import debug, error
 
 
@@ -43,7 +43,7 @@ class AIClient:
         Args:
             provider: 提供商名称，支持 'openai', 'qwen', 'deepseek'
         """
-        if provider in ['openai', 'qwen', 'deepseek']:
+        if provider in ['openai', 'qwen', 'deepseek', 'ollama']:
             self.provider = provider
             self._init_client()
             return True
@@ -68,7 +68,7 @@ class AIClient:
         # 获取当前提供商的模型配置
         provider_config = self.config.get(self.provider, {})
         model = provider_config.get('model', 'qwen-plus')
-        temperature = self.config.get('temperature', 0.7)
+        temperature = self.config.get('temperature', 0.1)
         max_tokens = max_tokens or self.config.get('max_tokens', 2000)
 
         try:

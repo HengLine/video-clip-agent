@@ -58,6 +58,15 @@ class FFmpegUtils:
         except FileNotFoundError:
             return False
 
+        # 确保输出目录存在
+        try:
+            output_dir = os.path.dirname(output_path)
+            if output_dir:  # 只有当目录路径不为空时才创建
+                os.makedirs(output_dir, exist_ok=True)
+        except Exception as e:
+            error(f"创建输出目录失败: {str(e)}")
+            return False
+
         # 构建FFmpeg命令
         cmd = [
             ffmpeg_path,
@@ -245,8 +254,9 @@ class FFmpegUtils:
                 debug(f"合并 {os.path.basename(current_merged)} ({current_duration}秒) 和 {os.path.basename(next_video)} ({next_duration}秒)")
 
                 if use_xfade:
-                    # 尝试使用xfade滤镜，# 减掉 transition_duration 方式会减少时长（视频重叠部分直接剪掉）
-                    offset = current_duration  # - transition_duration
+                    # 使用xfade滤镜，offset应该是第一个视频时长减去转场时长
+                    # 这样转场会在第一个视频结束前开始，实现平滑过渡
+                    offset = current_duration - transition_duration
                     debug("尝试使用xfade滤镜进行转场")
                     # 调用ffmpeg_run_utils中的apply_xfade_transition函数
                     success, stderr = apply_xfade_transition(
@@ -313,7 +323,7 @@ class FFmpegUtils:
             return None
 
     @staticmethod
-    def render_video(clip_paths: list[str], output_path: str, config: dict = None) -> str | None:
+    def render_video(clip_paths: list[str], output_path: str, config: dict = None, clip_mapping=None) -> str | None:
         """
         渲染最终视频，使用统一编码方式确保不同类型视频可以合并
         
@@ -333,6 +343,7 @@ class FFmpegUtils:
                     - enable: 是否启用统一转码
                     - ignore_dts: 是否忽略DTS时间戳问题
                     - force_key_frames: 是否强制关键帧
+            clip_mapping: 片段映射信息，用于保持顺序一致性
 
         Returns:
             str: 输出视频路径
@@ -536,8 +547,8 @@ class FFmpegUtils:
                     else:
                         debug(f"跳过无效或不存在的转码文件: {transcode_path}")
 
-            # 执行合并命令 - 传入config参数
-            merge_result, merge_stderr = merge_videos(merge_list_file, output_path, ffmpeg_path)
+            # 执行合并命令 - 传入config参数和片段映射信息
+            merge_result, merge_stderr = merge_videos(merge_list_file, output_path, ffmpeg_path, clip_mapping)
 
             # 检查合并结果
             if merge_result and os.path.exists(output_path):

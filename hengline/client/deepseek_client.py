@@ -7,8 +7,8 @@
 """
 from typing import Dict, Any, Optional, Callable
 
-from hengline.ai.base_client import BaseAIClient
-from hengline.ai.openai_compat import OpenAICompatibleWrapper, BaseOpenAIResponse
+from hengline.client.base_client import BaseAIClient
+from hengline.client.openai_compat import OpenAICompatibleWrapper, BaseOpenAIResponse
 from hengline.logger import debug, error
 
 
@@ -117,7 +117,7 @@ class DeepSeekClient(BaseAIClient):
         return {
             "model": model or cls.DEFAULT_MODEL,
             "messages": messages,
-            "temperature": temperature if temperature is not None else 0.7,
+            "temperature": temperature if temperature is not None else 0.2,
             "max_tokens": max_tokens if max_tokens is not None else 2000,
             "stream": False
         }

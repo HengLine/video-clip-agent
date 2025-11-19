@@ -22,22 +22,44 @@ from .agent_state import GraphState
 
 
 # 原始功能实现，不使用@tool装饰器
-def _extract_video_clip(video_path: str, start_time: float, end_time: float, output_path: str) -> bool:
+def _extract_video_clip(video_path: str, start_time: float, end_time: float, output_path: str, clip_index: int = 0) -> bool:
     """使用FFmpegUtils从视频中提取片段"""
-    return FFmpegUtils.extract_video_clip(video_path, output_path, start_time, end_time)
+    # 为片段添加顺序索引到文件名
+    base_name, ext = os.path.splitext(output_path)
+    indexed_output_path = f"{base_name}_clip_{clip_index:03d}{ext}"
+    success = FFmpegUtils.extract_video_clip(video_path, indexed_output_path, start_time, end_time)
+    
+    # 如果提取成功，更新output_path为实际生成的文件路径
+    if success:
+        # 将实际生成的文件路径复制回原始output_path位置
+        if os.path.exists(indexed_output_path) and os.path.exists(output_path):
+            os.remove(output_path)  # 删除原文件（如果存在）
+        if os.path.exists(indexed_output_path):
+            # 将文件重命名为原始期望的路径
+            import shutil
+            shutil.move(indexed_output_path, output_path)
+    
+    return success
 
 
 def _plan_sequential_sequence(clip_points: Dict[str, List[Tuple[float, float]]]) -> List[Dict[str, Any]]:
     """按顺序规划片段序列"""
     sequence = []
+    global_clip_index = 0
+    
     for video_path, points in clip_points.items():
         for i, (start, end) in enumerate(points):
+            # 生成唯一标识符，包含视频路径和片段索引
+            unique_id = f"{os.path.basename(video_path)}_segment_{i:03d}"
             sequence.append({
                 'video_path': video_path,
                 'start_time': start,
                 'end_time': end,
-                'index': i
+                'index': i,
+                'global_index': global_clip_index,
+                'unique_id': unique_id
             })
+            global_clip_index += 1
     return sequence
 
 
@@ -46,14 +68,21 @@ def _plan_interleaving_sequence(clip_points: Dict[str, List[Tuple[float, float]]
     sequence = []
     # 获取所有视频的片段
     all_clips = []
+    global_clip_index = 0
+    
     for video_path, points in clip_points.items():
         for i, (start, end) in enumerate(points):
+            # 生成唯一标识符
+            unique_id = f"{os.path.basename(video_path)}_segment_{i:03d}"
             all_clips.append({
                 'video_path': video_path,
                 'start_time': start,
                 'end_time': end,
-                'index': i
+                'index': i,
+                'global_index': global_clip_index,
+                'unique_id': unique_id
             })
+            global_clip_index += 1
 
     # 按视频路径和索引排序
     all_clips.sort(key=lambda x: (x['video_path'], x['index']))
@@ -84,7 +113,7 @@ def _apply_transitions(clip_paths: List[str], transition_type: str, duration: fl
         return clip_paths
 
     # 创建临时输出文件路径
-    temp_transition_path = os.path.join(output_dir, f"transition_{uuid.uuid4().hex}.mp4")
+    temp_transition_path = os.path.join(output_dir, f"transition_{str(uuid.uuid4())[:8]}.mp4")
 
     debug(f"开始应用转场效果: 片段数={len(clip_paths)}, 类型={transition_type}, 时长={duration}秒")
 
@@ -139,8 +168,12 @@ def apply_transitions(clip_paths: List[str], transition_type: str, duration: flo
     return _apply_transitions(clip_paths, transition_type, duration, output_dir, width, height, resize_mode)
 
 
-def render_video(clip_paths: List[str], output_path: str, config: Dict[str, Any]) -> str:
+def render_video(clip_paths: List[str], output_path: str, config: Dict[str, Any], clip_mapping: List[Dict[str, Any]] = None) -> str:
     """渲染最终视频"""
+    # 将clip_mapping添加到config中，以便FFmpegUtils可以使用
+    if clip_mapping:
+        config['clip_mapping'] = clip_mapping
+        debug(f"传递片段映射到渲染器: {len(clip_mapping)} 个片段")
     return FFmpegUtils.render_video(clip_paths, output_path, config)
 
 
@@ -198,27 +231,41 @@ class VideoEditorAgent(Runnable):
 
             # 提取片段
             extracted_clips = []
+            clip_mapping = []  # 记录片段映射关系
+            
             for clip_info in sequence_plan:
                 video_path = clip_info['video_path']
                 start_time = clip_info['start_time']
                 end_time = clip_info['end_time']
+                global_index = clip_info.get('global_index', 0)
+                unique_id = clip_info.get('unique_id', f'clip_{global_index}')
 
                 # 确保视频路径有效
                 if not video_path or not isinstance(video_path, str) or not os.path.exists(video_path):
                     error(f"无效的视频路径: {video_path}")
                     continue
 
-                # 生成临时文件名
-                clip_id = str(uuid.uuid4())[:8]
-                output_path = os.path.join(temp_dir, f"clip_{clip_id}.mp4")
+                # 使用唯一ID和全局索引生成文件名
+                output_path = os.path.join(temp_dir, f"{unique_id}.mp4")
 
-                # 提取片段
-                success = _extract_video_clip(video_path, start_time, end_time, output_path)
+                # 提取片段，传入全局索引
+                success = _extract_video_clip(video_path, start_time, end_time, output_path, global_index)
                 if success and os.path.exists(output_path):
-                    debug(f"成功提取片段: {output_path}")
+                    debug(f"成功提取片段: {output_path} (索引: {global_index})")
                     extracted_clips.append(output_path)
+                    # 记录映射关系
+                    clip_mapping.append({
+                        'original_index': global_index,
+                        'unique_id': unique_id,
+                        'video_path': video_path,
+                        'clip_path': output_path,
+                        'start_time': start_time,
+                        'end_time': end_time
+                    })
                 else:
                     warning(f"提取片段失败: {video_path}")
+
+            debug(f"片段映射关系: {clip_mapping}")
 
             # 从配置文件获取渲染配置
             render_config = get_video_rendering_config()
@@ -269,7 +316,7 @@ class VideoEditorAgent(Runnable):
 
             # 生成输出文件名和路径
             try:
-                output_filename = f"output_{str(uuid.uuid4())[:8]}.mp4"
+                output_filename = f"hengline_output_{str(uuid.uuid4())[:8]}.mp4"
                 output_path = os.path.join(output_dir, output_filename)
 
                 # 记录输出路径信息
@@ -338,8 +385,8 @@ class VideoEditorAgent(Runnable):
                     'next_agent': 'error_handler'
                 }
 
-            # 渲染最终视频
-            final_video_path = render_video(valid_extracted_clips, output_path, render_config)
+            # 渲染最终视频，传递片段映射信息
+            final_video_path = render_video(valid_extracted_clips, output_path, render_config, clip_mapping)
 
             # 验证渲染结果
             if not final_video_path or not isinstance(final_video_path, str) or not os.path.exists(final_video_path):
@@ -360,6 +407,7 @@ class VideoEditorAgent(Runnable):
 
             return {
                 'sequence_plan': sequence_plan,
+                'clip_mapping': clip_mapping,  # 添加片段映射关系
                 'editing_actions': editing_actions,
                 'final_video_path': final_video_path,
                 'next_agent': 'quality_validator'

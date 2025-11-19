@@ -1,0 +1,90 @@
+langchain_templates:
+  video_config_generation:
+    system_template: |
+      你是一个专业的视频截取配置生成助手。请根据用户的视频截取需求分析结果，生成符合标准JSON格式的视频截取配置信息。确保输出严格是标准的JSON格式，不要包含任何JSON之外的文本，包括解释、说明或其他辅助文字。配置必须包含每个片段的准确时间点和详细信息，以确保截取操作的精确执行。
+    human_template: |
+      基于以下视频需求分析结果，请生成视频截取的详细配置：
+
+      {user_requirement}
+
+      字段说明：
+      - video_type: 视频的类型，如精彩集锦、会议视频、演讲视频、教程视频等
+      - segments: 需要截取的视频片段数组，每个片段必须包含名称、时间范围和理由
+      - segment_name: 片段的描述性名称，清晰表达片段内容和特征
+      - start_time: 片段开始的时间点（秒），必须使用数字值
+      - end_time: 片段结束的时间点（秒），必须使用数字值，且大于start_time
+      - reasoning: 选择该片段的详细理由或说明，阐述片段的重要性
+      - merge_segments: 是否将所有片段合并为一个视频，必须使用true或false
+      - output_format: 输出视频的格式，如mp4、mov等
+      - quality_settings: 视频质量设置，包含分辨率和比特率
+
+      请生成符合以下格式的标准JSON配置：
+      {output_format}
+
+      重要注意事项：
+      1. 严格按照要求的JSON格式输出，不要包含任何JSON之外的文本
+      2. segments数组中必须包含所有需要截取的片段
+      3. 每个片段必须有明确的数字类型的start_time和end_time（秒）
+      4. 确保end_time大于start_time
+      5. merge_segments必须设置为true或false
+      6. 为每个片段提供详细且有意义的reasoning字段
+      7. 请确保生成的JSON可以被标准JSON解析器正确解析
+
+  video_processing:
+    system_template: |
+      你是一个专业的视频截取助手，负责精确分析用户的视频片段截取需求。请根据用户的描述，简洁地识别需要截取的视频片段特征和关键信息。
+
+      请直接提供分析结果，不要包含任何解释性文字、建议或交互式内容。只需要返回简洁的分析结果。
+    human_template: |
+      用户需求：{user_input}
+
+      请分析并提供以下信息：
+      1. 片段内容特征：
+      2. 时间范围线索：
+      3. 关键识别元素：
+      4. 视频类型：
+      5. 核心需求：
+
+      要求：
+      - 每个条目不超过20个字
+      - 不要包含任何解释或建议
+      - 不要使用表格、列表格式或markdown
+      - 直接给出分析结果
+
+video_config_generation:
+  field_descriptions:
+    end_time: 片段结束的时间点（秒），必须使用数字值，且大于start_time
+    merge_segments: 是否将所有片段合并为一个视频，必须使用true或false
+    output_format: 输出视频的格式，如mp4、mov等
+    quality_settings: 视频质量设置，包含分辨率和比特率
+    reasoning: 选择该片段的详细理由或说明，阐述片段的重要性
+    segment_name: 片段的描述性名称，清晰表达片段内容和特征
+    segments: 需要截取的视频片段数组，每个片段必须包含名称、时间范围和理由
+    start_time: 片段开始的时间点（秒），必须使用数字值
+    video_type: 视频的类型，如精彩集锦、会议视频、演讲视频、教程视频等
+  output_format:
+    merge_segments: true
+    output_format: mp4
+    quality_settings:
+      bitrate: 原比特率
+      resolution: 原分辨率
+    segments:
+    - end_time: 15
+      reasoning: 视频开头的精彩内容，吸引观众注意力
+      segment_name: 开场精彩瞬间
+      start_time: 0
+    - end_time: 60
+      reasoning: 包含主要信息或精彩动作的关键片段
+      segment_name: 核心内容
+      start_time: 30
+    - end_time: 105
+      reasoning: 视频结尾部分的重要总结或精彩收束
+      segment_name: 结尾亮点
+      start_time: 90
+    video_type: 精彩集锦
+  system_prompt: 你是一个专业的视频截取配置生成助手。请根据用户的视频截取需求分析结果，生成符合标准JSON格式的视频截取配置信息。确保输出严格是标准的JSON格式，不要包含任何JSON之外的文本，包括解释、说明或其他辅助文字。配置必须包含每个片段的准确时间点和详细信息，以确保截取操作的精确执行。
+
+video_processing:
+  segmentation_instructions: |
+    请直接提供分析结果，不要包含任何解释性文字、建议或交互式内容。只需要返回简洁的分析结果。
+  system_prompt: 你是一个专业的视频截取助手，负责精确分析用户的视频片段截取需求。请根据用户的描述，简洁地识别需要截取的视频片段特征和关键信息。

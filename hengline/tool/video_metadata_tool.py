@@ -62,6 +62,11 @@ class VideoMetadataReader:
                                           , self.config.get("probe_show_entries")
                                           , self.config.get("probe_format"))
 
+            # 检查是否成功获取元数据
+            if metadata is None:
+                error(f"ffprobe命令执行失败，无法读取视频元数据: {video_path}")
+                return self._get_default_metadata()
+
             # 提取和整理关键元数据
             return self._extract_key_metadata(metadata)
         except Exception as e:

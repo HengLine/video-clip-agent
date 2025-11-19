@@ -289,7 +289,7 @@ def generate_crop_strategy():
         info(f"开始生成裁剪策略，视频信息: {video_info}")
         
         # 调用AI模型生成视频配置（包含裁剪策略）
-        from hengline.ai.ai_client import global_ai_client
+        from hengline.client.ai_client import global_ai_client
         video_config = global_ai_client.generate_video_config(user_input)
         
         if video_config:

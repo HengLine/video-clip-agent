@@ -18,7 +18,7 @@ import os
 import subprocess
 import sys
 
-from app_env import AppBaseEnv
+from hengline.app_env import AppBaseEnv
 from hengline.logger import debug, info, error
 
 # 获取当前脚本所在目录（项目根目录）

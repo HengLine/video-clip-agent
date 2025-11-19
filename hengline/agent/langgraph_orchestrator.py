@@ -95,7 +95,7 @@ class LangGraphOrchestrator(Runnable):
         """
         编排器节点 - 使用langchain的chain装饰器增强功能
         """
-        info("🔄 执行编排器智能体 - 解析用户需求")
+        info("执行编排器智能体 - 解析用户需求")
 
         # 更新状态
         state['current_agent'] = "orchestrator"
@@ -110,14 +110,14 @@ class LangGraphOrchestrator(Runnable):
 
             # 日志记录
             if 'task_description' in result:
-                debug(f"✓ 任务描述: {result['task_description']}")
+                debug(f"任务描述: {result['task_description']}")
             if 'required_steps' in result:
-                debug(f"✓ 识别步骤: {len(result['required_steps'])}个")
+                debug(f"识别步骤: {len(result['required_steps'])}个")
 
             return state
 
         except Exception as e:
-            error(f"❌ 编排器执行异常: {str(e)}")
+            error(f"编排器执行异常: {str(e)}")
             state['error'] = f"编排器异常: {str(e)}"
             state['processing_status'] = "failed"
             return state
@@ -126,7 +126,7 @@ class LangGraphOrchestrator(Runnable):
         """
         内容分析节点 - 寻找剪切点和关键内容
         """
-        info("🔍 执行内容分析智能体 - 分析视频内容")
+        info("执行内容分析智能体 - 分析视频内容")
 
         # 更新状态
         state['current_agent'] = "content_analyzer"
@@ -141,14 +141,14 @@ class LangGraphOrchestrator(Runnable):
 
             # 日志记录和状态验证
             if 'analysis_results' in result:
-                debug(f"📊 分析完成，处理视频数: {len(result['analysis_results'])}")
+                debug(f"分析完成，处理视频数: {len(result['analysis_results'])}")
             if 'clip_points' in result:
-                debug(f"✂️  识别剪切点: {sum(len(points) for points in result['clip_points'].values())}个")
+                debug(f"识别剪切点: {sum(len(points) for points in result['clip_points'].values())}个")
 
             return state
 
         except Exception as e:
-            error(f"❌ 内容分析异常: {str(e)}")
+            error(f"内容分析异常: {str(e)}")
             state['error'] = f"内容分析异常: {str(e)}"
             state['processing_status'] = "failed"
             return state
@@ -157,7 +157,7 @@ class LangGraphOrchestrator(Runnable):
         """
         视频编辑节点 - 裁剪、排序、合并、调整视频
         """
-        info("🎬 执行视频编辑智能体 - 处理视频内容")
+        info("执行视频编辑智能体 - 处理视频内容")
 
         # 更新状态
         state['current_agent'] = "video_editor"
@@ -172,14 +172,14 @@ class LangGraphOrchestrator(Runnable):
 
             # 日志记录
             if 'editing_actions' in result:
-                debug(f"⚡ 执行编辑动作: {len(result['editing_actions'])}")
+                debug(f"执行编辑动作: {len(result['editing_actions'])}")
             if 'final_video_path' in result:
-                info(f"✅ 生成最终视频: {result['final_video_path']}")
+                info(f"生成最终视频: {result['final_video_path']}")
 
             return state
 
         except Exception as e:
-            error(f"❌ 视频编辑异常: {str(e)}")
+            error(f"视频编辑异常: {str(e)}")
             state['error'] = f"视频编辑异常: {str(e)}"
             state['processing_status'] = "failed"
             return state
@@ -188,7 +188,7 @@ class LangGraphOrchestrator(Runnable):
         """
         质量验证节点 - 验证最终视频质量
         """
-        info("✅ 执行质量验证智能体 - 检查视频质量")
+        info("执行质量验证智能体 - 检查视频质量")
 
         # 更新状态
         state['current_agent'] = "quality_validator"
@@ -206,12 +206,12 @@ class LangGraphOrchestrator(Runnable):
 
             # 日志记录
             if 'validation_report' in result:
-                debug(f"📋 验证报告: {result['validation_report']}")
+                debug(f"验证报告: {result['validation_report']}")
 
             return state
 
         except Exception as e:
-            error(f"❌ 质量验证异常: {str(e)}")
+            error(f"质量验证异常: {str(e)}")
             state['error'] = f"质量验证异常: {str(e)}"
             state['processing_status'] = "failed"
             state['validation_passed'] = False
@@ -224,7 +224,7 @@ class LangGraphOrchestrator(Runnable):
         error_msg = state.get('error', '未知错误')
         current_agent = state.get('current_agent', 'unknown')
 
-        info(f"❌ 执行错误处理 - 智能体: {current_agent}, 错误: {error_msg}")
+        info(f"执行错误处理 - 智能体: {current_agent}, 错误: {error_msg}")
 
         # 更新状态
         state['current_agent'] = "error_handler"
@@ -248,7 +248,7 @@ class LangGraphOrchestrator(Runnable):
             return state
 
         except Exception as e:
-            error(f"❌ 错误处理异常: {str(e)}")
+            error(f"错误处理异常: {str(e)}")
             state['error'] = f"错误处理异常: {str(e)}"
             return state
 
@@ -298,11 +298,11 @@ class LangGraphOrchestrator(Runnable):
         state['current_agent'] = "quality_validator"
         state['next_agent'] = None
 
-        info("🎉 质量验证通过，流程执行成功完成")
+        info("质量验证通过，流程执行成功完成")
         return END
 
     # 实现Runnable接口的invoke方法
-    def invoke(self, input_state: Dict[str, Any], config: Optional[Dict] = None) -> Dict[str, Any]:
+    def invoke(self, input_state: Dict[str, Any], config: Optional[Dict] = None, **kwargs) -> Dict[str, Any]:
         """
         实现langchain的Runnable接口
         支持标准的invoke调用模式
@@ -317,7 +317,7 @@ class LangGraphOrchestrator(Runnable):
 
         # 生成唯一的thread_id用于跟踪
         thread_id = f"video_processing_{os.urandom(8).hex()}"
-        debug(f"🔍 创建新的流程实例，thread_id={thread_id}")
+        debug(f"创建新的流程实例，thread_id={thread_id}")
 
         # 配置langgraph的执行参数
         graph_config = {
@@ -331,7 +331,7 @@ class LangGraphOrchestrator(Runnable):
             result = self.graph.invoke(prepared_state, config=graph_config)
             return result
         except Exception as e:
-            error(f"❌ 运行智能体流程时发生异常: {str(e)}")
+            error(f"运行智能体流程时发生异常: {str(e)}")
             # 确保返回有效的错误状态
             return {
                 'error': f"流程执行异常: {str(e)}",
@@ -356,14 +356,14 @@ class LangGraphOrchestrator(Runnable):
         完全利用langgraph的高级功能
         """
         try:
-            info("🚀 开始运行基于langchain+langgraph的智能体流程")
+            info("开始运行基于langchain+langgraph的智能体流程")
 
             # 准备初始状态 - 确保所有必要字段都有默认值
             prepared_state = self._prepare_initial_state(initial_state)
 
             # 生成唯一的thread_id用于跟踪
             thread_id = f"video_processing_{os.urandom(8).hex()}"
-            debug(f"🔍 创建新的流程实例，thread_id={thread_id}")
+            debug(f"创建新的流程实例，thread_id={thread_id}")
 
             # 配置langgraph的执行参数
             graph_config = {
@@ -389,7 +389,7 @@ class LangGraphOrchestrator(Runnable):
                     result['processing_status'] = "completed"
                     debug("状态修正：验证通过且有输出视频，将状态更新为completed")
 
-                info(f"🎉 智能体流程执行成功完成，thread_id={thread_id}")
+                info(f"智能体流程执行成功完成，thread_id={thread_id}")
                 # 添加执行摘要
                 result['execution_summary'] = {
                     'status': 'success',
@@ -398,12 +398,12 @@ class LangGraphOrchestrator(Runnable):
                     'output_video': result.get('final_video_path')
                 }
             else:
-                warning(f"❌ 智能体流程执行未完成，状态: {processing_status}, 验证通过: {validation_passed}, 有错误: {has_error}")
+                warning(f"智能体流程执行未完成，状态: {processing_status}, 验证通过: {validation_passed}, 有错误: {has_error}")
 
             return result
 
         except Exception as e:
-            error(f"❌ 运行智能体流程时发生异常: {str(e)}")
+            error(f"运行智能体流程时发生异常: {str(e)}")
             return {
                 'error': f"流程执行异常: {str(e)}",
                 'processing_status': "failed"
@@ -474,7 +474,7 @@ class LangGraphOrchestrator(Runnable):
         required_fields = ['videos', 'user_query']
         for field in required_fields:
             if not prepared_state[field]:
-                warning(f"⚠️  初始状态缺少必要字段或值为空: {field}")
+                warning(f"初始状态缺少必要字段或值为空: {field}")
 
         return prepared_state
 

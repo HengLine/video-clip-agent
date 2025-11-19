@@ -6,20 +6,20 @@
 @Author: HengLine
 @Time: 2025/08 - 2025/11
 """
-
+import json
 import os
-import sys
-import uuid
 
 from flask import request, jsonify, send_from_directory, Blueprint
-from hengline.logger import debug, info, error
+
 from config.config import get_allowed_extensions, get_upload_dir, get_output_dir
+from hengline.logger import info, error
 from utils.file_utils import upload_files
 
 app = Blueprint('video_route', __name__)
 
 # 注意：agent_graph将在应用初始化时通过配置注入
 from flask import current_app
+
 
 @app.route('/api/process-video', methods=['POST'])
 def process_video_route():
@@ -28,7 +28,7 @@ def process_video_route():
         agent_graph = current_app.config.get('agent_graph')
         if not agent_graph:
             return jsonify({'status': 'error', 'message': '智能体服务未初始化'}), 500
-            
+
         # 获取用户请求参数
         user_query = request.form.get('query', '')
         # 也尝试从其他可能的参数名获取
@@ -57,14 +57,13 @@ def process_video_route():
             'user_query': user_query,
             'config': {}  # 输出目录使用video_editor中的默认设置
         }
-        
+
         # 检查是否有裁剪策略信息
         use_crop_strategy = request.form.get('use_crop_strategy', 'false')
         if use_crop_strategy.lower() == 'true':
             try:
                 # 获取裁剪策略JSON字符串
                 crop_strategy_str = request.form.get('crop_strategy', '{}')
-                import json
                 crop_strategy = json.loads(crop_strategy_str)
                 # 将裁剪策略添加到初始状态
                 initial_state['crop_strategy'] = crop_strategy
@@ -108,5 +107,5 @@ def process_video_route():
 @app.route('/api/video/<filename>', methods=['GET'])
 def serve_video_route(filename):
     """提供视频文件下载服务"""
-    
+
     return send_from_directory(get_output_dir(), filename)
