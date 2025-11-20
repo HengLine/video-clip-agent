@@ -1,6 +1,6 @@
 """
-@FileName: ffmpeg_common_utils.py
-@Description: 
+@FileName: ffmpeg_env_utils.py
+@Description: FFmpeg环境工具类，用于封装所有FFmpeg相关的功能。提供查找FFmpeg可执行文件路径等功能的统一接口
 @Author: HengLine
 @Time: 2025/10/17 16:14
 """
@@ -68,8 +68,8 @@ def find_ffmpeg() -> str:
             return path
 
     # 如果所有路径都检查失败，抛出异常
-    error("FFmpeg not found. Please install FFmpeg and add it to your system PATH.")
-    raise FileNotFoundError("FFmpeg not found. Please install FFmpeg and add it to your system PATH.")
+    error("没有找到可用的 FFmpeg 可执行文件，请检查系统 PATH 是否配置正确，或者手动指定 FFmpeg 路径")
+    raise FileNotFoundError("FFmpeg 不可用，请检查是否安装并配置了正确的 PATH")
 
 
 

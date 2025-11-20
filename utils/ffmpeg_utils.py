@@ -1,7 +1,10 @@
+
 """
-FFmpeg工具类，用于封装所有FFmpeg相关的功能
-提供视频片段提取、视频合并、转码等功能的统一接口
-https://ffmpeg.org/ffmpeg.html
+@FileName: ffmpeg_utils.py
+@Description: FFmpeg工具类，用于封装所有FFmpeg相关的功能。提供视频片段提取、视频合并、转码等功能的统一接口
+        https://ffmpeg.org/ffmpeg.html
+@Author: HengLine
+@Time: 2025/10 - 2025/11
 """
 import os
 import subprocess

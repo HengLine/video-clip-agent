@@ -181,12 +181,13 @@ def save_config(config: Dict[str, Any]) -> bool:
         print(f"保存配置文件失败: {str(e)}")
         return False
 
-def get_flask_secret_key() -> str:
+def get_flask_host() -> dict:
     """
-    获取Flask应用的密钥
+    获取Flask应用的主机地址
     """
     # 从环境变量获取，如果没有则使用默认值
-    return os.environ.get('FLASK_SECRET_KEY', 'dev-secret-key-change-in-production')
+    config = get_settings_config()
+    return config['flask']
 
 def get_app_root() -> str:
     """

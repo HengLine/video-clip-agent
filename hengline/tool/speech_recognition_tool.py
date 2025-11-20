@@ -44,7 +44,7 @@ class SpeechRecognizer:
             if hasattr(self.recognizer, 'recognize_google'):
                 engines.append("Google Speech Recognition")
         except Exception as e:
-            debug(f"Google Speech Recognition检查失败: {e}")
+            error(f"Google Speech Recognition检查失败: {e}")
         
         # 检查Sphinx离线识别（英文）
         try:
@@ -53,9 +53,9 @@ class SpeechRecognizer:
                 import pocketsphinx
                 engines.append("Sphinx离线识别(英文)")
         except ImportError:
-            debug("PocketSphinx未安装，离线识别不可用")
+            warning("PocketSphinx未安装，离线识别不可用")
         except Exception as e:
-            debug(f"Sphinx离线识别检查失败: {e}")
+            error(f"Sphinx离线识别检查失败: {e}")
         
         return engines
 

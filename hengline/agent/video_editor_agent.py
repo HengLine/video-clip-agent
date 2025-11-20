@@ -21,7 +21,6 @@ from utils.log_utils import print_log_exception
 from .agent_state import GraphState
 
 
-# 原始功能实现，不使用@tool装饰器
 def _extract_video_clip(video_path: str, start_time: float, end_time: float, output_path: str, clip_index: int = 0) -> bool:
     """使用FFmpegUtils从视频中提取片段"""
     # 为片段添加顺序索引到文件名

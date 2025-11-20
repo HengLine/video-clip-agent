@@ -1,6 +1,6 @@
 {
   "logging": {
-    "level": "DEBUG",
+    "level": "INFO",
     "console_level": "DEBUG",
     "file_level": "INFO",
     "disable_unnecessary_logs": true
@@ -8,7 +8,9 @@
   "flask": {
     "host": "0.0.0.0",
     "port": 8000,
-    "debug": true
+    "secret_key": "",
+    "use_reloader": false,
+    "debug": false
   },
   "video_processing": {
     "upload_dir": "uploads",

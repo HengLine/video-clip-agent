@@ -66,7 +66,7 @@
     <div class="container mx-auto px-4 py-3 flex justify-between items-center">
         <div class="flex items-center space-x-2">
             <i class="fa fa-video-camera text-primary text-2xl"></i>
-            <h1 class="text-xl font-bold text-dark">视频工具智能体</h1>
+            <h1 class="text-xl font-bold text-dark">视频混剪智能体</h1>
             <span class="text-xs bg-accent text-white px-2 py-1 rounded-full">v{{ version }}</span>
         </div>
         <nav class="hidden md:flex space-x-6">
@@ -87,10 +87,10 @@
     <section class="bg-gradient-to-br from-primary/10 to-accent/10 py-16 md:py-24">
         <div class="container mx-auto px-4 text-center">
             <h2 class="text-[clamp(2rem,5vw,3.5rem)] font-bold text-dark mb-6 leading-tight text-shadow">
-                智能视频内容处理助手
+                AI 智能视频处理助手
             </h2>
             <p class="text-[clamp(1rem,2vw,1.25rem)] text-gray-600 max-w-3xl mx-auto mb-8">
-                上传您的视频，告诉我们您需要什么，让AI智能体自动为您分析内容、剪辑视频并生成高质量的结果。
+                上传视频后告诉AI你的需求，智能体将自动分析并剪辑视频并生成高质量结果。
             </p>
             <a href="#upload-section" class="btn-primary inline-flex items-center space-x-2 mx-auto">
                 <span>开始使用</span>
@@ -349,7 +349,7 @@
     <section id="how-it-works" class="py-16 bg-white">
         <div class="container mx-auto px-4">
             <h3 class="text-3xl font-bold text-center text-dark mb-4">工作原理</h3>
-            <p class="text-gray-600 text-center max-w-2xl mx-auto mb-12">我们采用智能体协作架构，通过多个专业智能体协同工作，为您提供高质量的视频处理服务</p>
+            <p class="text-gray-600 text-center max-w-2xl mx-auto mb-12">采用智能体协作架构，通过多个专业智能体协同工作，为您提供高质量的视频处理服务</p>
 
             <div class="relative">
                 <!-- 连接线 -->
@@ -411,12 +411,12 @@
             <div class="mb-4 md:mb-0">
                 <div class="flex items-center space-x-2">
                     <i class="fa fa-video-camera text-primary text-xl"></i>
-                    <span class="font-bold text-lg">视频工具智能体</span>
+                    <span class="font-bold text-lg">视频剪辑工具智能体</span>
                 </div>
-                <p class="text-gray-400 text-sm mt-2">智能、高效的视频处理解决方案</p>
+                <p class="text-gray-400 text-sm mt-2">智能、高效的视频处理解决方案。通过自然语言描述，即可自动完成视频剪切、合成和特效。</p>
             </div>
             <div class="flex space-x-6">
-                <a href="https://pengline.github.io" class="text-gray-400 hover:text-white transition-colors">
+                <a href="https://github.com/HengLine/video-clip-agent" class="text-gray-400 hover:text-white transition-colors">
                     <i class="fa fa-github text-xl"></i>
                 </a>
                 <a href="https://pengline.github.io" class="text-gray-400 hover:text-white transition-colors">
@@ -428,7 +428,7 @@
             </div>
         </div>
         <div class="border-t border-gray-800 mt-6 pt-6 text-center text-gray-500 text-sm">
-            <p>&copy; 2025 视频工具智能体 | 版本 {{ version }}</p>
+            <p>&copy; 2025 视频剪辑工具智能体 | 版本 {{ version }}</p>
         </div>
     </div>
 </footer>
@@ -915,7 +915,7 @@
             e.preventDefault();
             submitFormWithOptions();
             document.getElementById("progress-section").scrollIntoView({
-                block: 'start',
+                block: 'end',
                 behavior: 'smooth'
             });
         });
@@ -1385,6 +1385,9 @@
 
                 if (result.success && result.crop_strategy) {
                     const strategy = result.crop_strategy;
+                    
+                    // 保存策略到全局变量
+                    window.currentCropStrategy = strategy;
 
                     // 格式化裁剪策略为易读文本
                     let strategyText = '基于您的需求，我为您制定了以下裁剪分镜策略：\n\n';
@@ -2148,7 +2151,6 @@
 
                         // 重置表单和进度
                         progressSection.classList.add('hidden');
-                        // uploadForm.classList.remove('hidden'); // 不需要，因为表单没有被隐藏
                         fileInput.value = '';
                         selectedFiles = [];
                         fileList.innerHTML = '';
@@ -2173,6 +2175,8 @@
                             text.classList.remove('text-green-600');
                             text.classList.add('text-gray-500');
                         }
+                        // 清空视频处理成功状态
+                        document.getElementById('processing-success').classList.add('hidden');
                         
                         // 滚动到上传区域
                         document.getElementById('upload-section').scrollIntoView({
@@ -2228,6 +2232,18 @@
                     };
                 }
             }, 1000);
+
+            const understandBtn = document.getElementById('understand-requirement-btn');
+            const submitBtn = document.querySelector('button[type="submit"]');
+
+            if (understandBtn) {
+                understandBtn.disabled = false;
+                understandBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
         }
 
         // 处理错误

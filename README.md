@@ -46,7 +46,7 @@
    ```
 3. 配置LLM
 
-   复制 .env.example 为 .env。修改内容
+   复制 .env.example 为 .env。并修改其中LLM内容
 
    ```ini
    # AI 提供商选择，可选值: openai, qwen, deepseek, ollama

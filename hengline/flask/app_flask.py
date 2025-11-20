@@ -8,6 +8,7 @@
 """
 
 # 然后导入其他标准库和第三方库
+from logging import warning
 import os
 import signal
 import sys
@@ -22,7 +23,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 
 # 导入自定义日志模块
 from hengline.logger import debug, info
-from config.config import get_flask_secret_key, get_settings_config, get_model_dir
+from config.config import get_flask_host, get_model_dir
 
 # 初始化Flask应用
 # 使用绝对路径来确保模板正确加载
@@ -47,8 +48,11 @@ debug(f"输出目录配置为: {OUTPUT_FOLDER}")
 debug(f"模型目录配置为: {MODEL_DIR}")
 debug(f"允许的文件扩展名: {ALLOWED_EXTENSIONS}")
 
+flask_host_config = get_flask_host()
+debug(f"Flask主机配置: {flask_host_config}")
+
 # 从配置工具获取Flask配置
-app.secret_key = get_flask_secret_key()
+app.secret_key = flask_host_config.get('secret_key', '')
 
 # 初始化智能体编排器并存储到应用配置中
 from hengline.agent.langgraph_orchestrator import LangGraphOrchestrator
@@ -80,12 +84,12 @@ def run_flask_app():
     """\在独立函数中运行Flask应用，便于信号处理"""
     try:
         # 直接使用Flask内置服务器启动应用（不使用SocketIO）
-        info("使用Flask内置服务器启动应用...")
+        debug("使用Flask内置服务器启动应用...")
         app.run(
-            debug=True,
-            host='0.0.0.0',
-            port=8000,
-            use_reloader=False
+            debug=flask_host_config.get('debug', False),
+            host=flask_host_config.get('host', '0.0.0.0'),
+            port=flask_host_config.get('port', 8000),
+            use_reloader=flask_host_config.get('use_reloader', False)
         )
     except KeyboardInterrupt:
         info("Flask应用被用户中断")
@@ -116,6 +120,6 @@ if __name__ == '__main__':
     try:
         run_flask_app()
     except KeyboardInterrupt:
-        info("主进程捕获到KeyboardInterrupt异常")
+        warning("主进程捕获到KeyboardInterrupt异常")
         # 确保所有资源都被正确释放
         sys.exit(0)

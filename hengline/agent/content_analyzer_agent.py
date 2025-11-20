@@ -223,7 +223,14 @@ class ContentAnalyzerAgent(Runnable):
         try:
             videos = state.get('videos', [])
             user_query = state.get('user_query', '')
+            crop_strategy = state.get('crop_strategy', {})
 
+            # 首先检查是否有AI生成的裁剪策略
+            if crop_strategy and isinstance(crop_strategy, dict) and 'segments' in crop_strategy:
+                info(f"使用AI生成的裁剪策略，包含{len(crop_strategy.get('segments', []))}个片段")
+                return self._process_crop_strategy(crop_strategy, videos, state)
+
+            # 如果没有裁剪策略，则进行传统的内容分析
             # 首先分析用户需求
             requirement_analysis = self.analyze_requirement(user_query)
 
@@ -255,7 +262,7 @@ class ContentAnalyzerAgent(Runnable):
                 # 根据分析策略执行相应的分析
                 video_analysis = {
                     'metadata': metadata,
-                    'scenes': [],
+                    'scenes': {},
                     'objects': {},
                     'emotions': {},
                     'transcriptions': [],
@@ -282,6 +289,17 @@ class ContentAnalyzerAgent(Runnable):
                             # 如果格式不正确，使用空列表
                             warning(f"场景检测返回格式错误: {type(scenes_result)}")
                             clip_points[video_path] = []
+                        
+                        # 如果没有生成剪切点，尝试使用generate_clip_points方法
+                        if not clip_points.get(video_path):
+                            debug(f"场景检测未生成剪切点，尝试使用generate_clip_points方法")
+                            try:
+                                generated_points = self.generate_clip_points(video_analysis, user_query, metadata)
+                                if generated_points:
+                                    clip_points[video_path] = generated_points
+                                    debug(f"generate_clip_points生成了{len(generated_points)}个剪切点")
+                            except Exception as e:
+                                warning(f"generate_clip_points失败: {str(e)}")
                     except Exception as e:
                         warning(f"场景检测失败: {str(e)}")
                         video_analysis['scenes'] = []
@@ -407,6 +425,124 @@ class ContentAnalyzerAgent(Runnable):
 
         return clip_points
 
+    def _is_fixed_duration_requirement(self, user_query: str) -> bool:
+        """
+        检查用户查询是否包含固定时长切割需求
+        """
+        if not isinstance(user_query, str):
+            return False
+        
+        query_lower = user_query.lower()
+        
+        # 固定时长切割模式 - 重复切割
+        repeated_cutting_patterns = [
+            r'每\s*\d+\s*秒',  # "每5秒"
+            r'每\s*\d+\s*分钟',  # "每1分钟"
+            r'切割为\s*\d+\s*秒',  # "切割为5秒"
+            r'切割为\s*\d+\s*分钟',  # "切割为1分钟"
+            r'截取\s*\d+\s*秒',  # "截取5秒"
+            r'截取\s*\d+\s*分钟',  # "截取1分钟"
+        ]
+        
+        # 单次提取模式 - 每个视频只取指定时长
+        single_extract_patterns = [
+            r'最精彩.*\d+\s*秒',  # "最精彩5秒"
+            r'最关键.*\d+\s*秒',  # "最关键5秒"
+            r'核心.*\d+\s*秒',  # "核心5秒"
+            r'精彩.*\d+\s*秒',  # "精彩5秒"
+            r'关键.*\d+\s*秒',  # "关键5秒"
+            r'各段.*\d+\s*秒',  # "各段5秒"
+            r'每段.*\d+\s*秒',  # "每段5秒"
+            r'各视频.*\d+\s*秒',  # "各视频5秒"
+            r'每个视频.*\d+\s*秒',  # "每个视频5秒"
+        ]
+        
+        # 通用时长模式
+        general_patterns = [
+            r'\d+\s*秒',  # "5秒", "10 秒"
+            r'\d+\s*分钟',  # "1分钟", "2 分钟"
+            r'n\s*秒',  # "n秒"
+            r'时长\s*\d+\s*秒',  # "时长5秒"
+            r'长度\s*\d+\s*秒',  # "长度5秒"
+        ]
+        
+        import re
+        # 检查是否匹配任何模式
+        all_patterns = repeated_cutting_patterns + single_extract_patterns + general_patterns
+        for pattern in all_patterns:
+            if re.search(pattern, query_lower):
+                return True
+        return False
+
+    def _generate_fixed_duration_clips(self, user_query: str, video_metadata: Dict[str, Any] = None) -> List[Tuple[float, float]]:
+        """
+        根据用户查询生成固定时长的剪切点
+        支持两种模式：
+        1. 重复切割模式：每N秒切割一次
+        2. 单次提取模式：每个视频只取N秒
+        """
+        import re
+        
+        # 提取时长（秒）
+        duration_match = re.search(r'(\d+)\s*秒', user_query)
+        if duration_match:
+            clip_duration = float(duration_match.group(1))
+        elif 'n秒' in user_query:
+            # 如果是"n秒"，使用默认5秒
+            clip_duration = 5.0
+        else:
+            # 尝试分钟转秒
+            minute_match = re.search(r'(\d+)\s*分钟', user_query)
+            if minute_match:
+                clip_duration = float(minute_match.group(1)) * 60.0
+            else:
+                return []
+        
+        # 获取视频总时长
+        total_duration = None
+        if video_metadata and isinstance(video_metadata, dict):
+            total_duration = video_metadata.get('duration')
+        
+        # 如果没有视频元数据，尝试从分析数据中获取
+        if total_duration is None:
+            total_duration = 60.0  # 默认60秒
+        
+        # 判断是单次提取模式还是重复切割模式
+        query_lower = user_query.lower()
+        single_extract_patterns = [
+            r'最精彩.*\d+\s*秒',
+            r'最关键.*\d+\s*秒', 
+            r'核心.*\d+\s*秒',
+            r'精彩.*\d+\s*秒',
+            r'关键.*\d+\s*秒',
+            r'各段.*\d+\s*秒',
+            r'每段.*\d+\s*秒',
+            r'各视频.*\d+\s*秒',
+            r'每个视频.*\d+\s*秒'
+        ]
+        
+        is_single_extract = any(re.search(pattern, query_lower) for pattern in single_extract_patterns)
+        
+        clip_points = []
+        
+        if is_single_extract:
+            # 单次提取模式：每个视频只取指定时长（从视频开始）
+            end_time = min(clip_duration, total_duration)
+            if end_time >= 1.0:  # 至少1秒
+                clip_points.append((0.0, end_time))
+                debug(f"单次提取模式：从0.0s到{end_time}s，时长{end_time}s")
+        else:
+            # 重复切割模式：每N秒切割一次
+            current_time = 0.0
+            while current_time < total_duration:
+                end_time = min(current_time + clip_duration, total_duration)
+                if end_time - current_time >= 1.0:  # 至少1秒
+                    clip_points.append((current_time, end_time))
+                current_time += clip_duration
+            debug(f"重复切割模式：生成{len(clip_points)}个片段，每个{clip_duration}s")
+        
+        return clip_points
+
     def _extract_audio_keywords_from_query(self, user_query: str) -> List[str]:
         """
         从用户查询中提取音频关键词
@@ -516,7 +652,7 @@ class ContentAnalyzerAgent(Runnable):
                 'focus_areas': ['scene_detection', 'emotion_analysis', 'speech_transcription']
             }
 
-    def generate_clip_points(self, analysis_data: Dict[str, Any], user_query: str) -> List[Tuple[float, float]]:
+    def generate_clip_points(self, analysis_data: Dict[str, Any], user_query: str, video_metadata: Dict[str, Any] = None) -> List[Tuple[float, float]]:
         """
         根据分析结果和用户查询生成剪切点
         使用chain装饰器增强功能
@@ -530,6 +666,13 @@ class ContentAnalyzerAgent(Runnable):
             return []
 
         try:
+            # 首先检查是否是固定时长切割需求
+            if self._is_fixed_duration_requirement(user_query_lower):
+                clip_points = self._generate_fixed_duration_clips(user_query_lower, video_metadata)
+                if clip_points:
+                    debug(f"根据固定时长需求生成了 {len(clip_points)} 个剪切点")
+                    return clip_points
+
             # 基于情绪的剪切点
             emotions = analysis_data.get('emotions', {})
             # 确保emotions是字典类型
@@ -594,6 +737,204 @@ class ContentAnalyzerAgent(Runnable):
             clip_points = []
 
         return clip_points
+
+    def _process_crop_strategy(self, crop_strategy: Dict[str, Any], videos: List[str], state: GraphState) -> Dict[str, Any]:
+        """
+        处理AI生成的裁剪策略，将segments转换为clip_points
+        
+        Args:
+            crop_strategy: AI生成的裁剪策略，包含segments数组
+            videos: 视频文件路径列表
+            state: 图状态
+            
+        Returns:
+            包含clip_points的分析结果
+        """
+        try:
+            user_query = state.get('user_query', '')
+            user_query_lower = user_query.lower() if isinstance(user_query, str) else ''
+            
+            # 检查是否是固定时长切割需求
+            if self._is_fixed_duration_requirement(user_query_lower):
+                debug(f"检测到固定时长切割需求，忽略AI生成的segments")
+                return self._process_fixed_duration_strategy(videos, user_query_lower, state)
+            
+            segments = crop_strategy.get('segments', [])
+            if not segments:
+                warning(f"裁剪策略中没有segments数据")
+                return {
+                    'error': "裁剪策略中没有segments数据",
+                    'analysis_results': {},
+                    'clip_points': {},
+                    'next_agent': 'error_handler'
+                }
+            
+            # 将segments转换为clip_points格式
+            clip_points = {}
+            
+            # 如果只有一个视频，将所有segments分配给该视频
+            if len(videos) == 1:
+                video_path = videos[0]
+                video_clips = []
+                
+                for segment in segments:
+                    start_time = segment.get('start_time', 0)
+                    end_time = segment.get('end_time', start_time + 5)  # 默认5秒
+                    
+                    # 验证时间有效性
+                    if isinstance(start_time, (int, float)) and isinstance(end_time, (int, float)) and end_time > start_time:
+                        video_clips.append((float(start_time), float(end_time)))
+                    else:
+                        warning(f"无效的时间段: {segment}")
+                
+                clip_points[video_path] = video_clips
+                info(f"为视频 {os.path.basename(video_path)} 生成了 {len(video_clips)} 个剪切点")
+                
+            else:
+                # 如果有多个视频，需要根据某种策略分配segments
+                # 这里简单地将segments平均分配给所有视频
+                segments_per_video = max(1, len(segments) // len(videos))
+                
+                for i, video_path in enumerate(videos):
+                    start_idx = i * segments_per_video
+                    end_idx = start_idx + segments_per_video
+                    if i == len(videos) - 1:  # 最后一个视频处理剩余的所有segments
+                        end_idx = len(segments)
+                    
+                    video_clips = []
+                    for segment in segments[start_idx:end_idx]:
+                        start_time = segment.get('start_time', 0)
+                        end_time = segment.get('end_time', start_time + 5)
+                        
+                        if isinstance(start_time, (int, float)) and isinstance(end_time, (int, float)) and end_time > start_time:
+                            video_clips.append((float(start_time), float(end_time)))
+                    
+                    if video_clips:
+                        clip_points[video_path] = video_clips
+                        info(f"为视频 {os.path.basename(video_path)} 生成了 {len(video_clips)} 个剪切点")
+            
+            # 创建基本的分析结果
+            analysis_results = {}
+            for video_path in videos:
+                if video_path in clip_points:
+                    analysis_results[video_path] = {
+                        'metadata': read_video_metadata(video_path),
+                        'scenes': clip_points[video_path],  # 使用剪切点作为场景
+                        'objects': {},
+                        'emotions': {},
+                        'transcriptions': [],
+                        'source': 'ai_crop_strategy'  # 标记来源
+                    }
+            
+            return {
+                'analysis_results': analysis_results,
+                'clip_points': clip_points,
+                'requirement_analysis': {
+                    'success': True,
+                    'requirement_type': 'ai_generated',
+                    'processing_focus': 'crop_strategy_segments',
+                    'video_config': crop_strategy
+                },
+                'analysis_strategy': {
+                    'use_default': False,
+                    'focus_areas': ['crop_strategy'],
+                    'source': 'ai_generated'
+                },
+                'audio_keywords': [],
+                'next_agent': 'video_editor'
+            }
+            
+        except Exception as e:
+            error(f"处理裁剪策略时发生异常: {str(e)}")
+            return {
+                'error': f"处理裁剪策略失败: {str(e)}",
+                'analysis_results': {},
+                'clip_points': {},
+                'next_agent': 'error_handler'
+            }
+
+    def _process_fixed_duration_strategy(self, videos: List[str], user_query: str, state: GraphState) -> Dict[str, Any]:
+        """
+        处理固定时长切割策略
+        
+        Args:
+            videos: 视频文件路径列表
+            user_query: 用户查询
+            state: 图状态
+            
+        Returns:
+            包含固定时长剪切点的分析结果
+        """
+        try:
+            clip_points = {}
+            analysis_results = {}
+            total_clips = 0
+            total_duration = 0.0
+            
+            for video_path in videos:
+                if not os.path.exists(video_path):
+                    warning(f"视频文件不存在: {video_path}")
+                    continue
+                
+                # 读取视频元数据
+                metadata = read_video_metadata(video_path)
+                
+                # 生成固定时长的剪切点
+                video_clip_points = self._generate_fixed_duration_clips(user_query, metadata)
+                
+                if video_clip_points:
+                    clip_points[video_path] = video_clip_points
+                    analysis_results[video_path] = {
+                        'metadata': metadata,
+                        'scenes': video_clip_points,
+                        'objects': {},
+                        'emotions': {},
+                        'transcriptions': [],
+                        'source': 'fixed_duration_strategy'
+                    }
+                    
+                    # 计算总片段数和总时长
+                    total_clips += len(video_clip_points)
+                    for start, end in video_clip_points:
+                        total_duration += (end - start)
+                    
+                    info(f"为视频 {os.path.basename(video_path)} 生成了 {len(video_clip_points)} 个固定时长剪切点")
+                else:
+                    warning(f"无法为视频 {os.path.basename(video_path)} 生成固定时长剪切点")
+            
+            result = {
+                'analysis_results': analysis_results,
+                'clip_points': clip_points,
+                'requirement_analysis': {
+                    'success': True,
+                    'requirement_type': 'fixed_duration',
+                    'video_config': {
+                        'duration_type': 'fixed',
+                        'user_query': user_query,
+                        'total_clips': total_clips,
+                        'total_duration': total_duration
+                    }
+                },
+                'analysis_strategy': {
+                    'use_default': False,
+                    'focus_areas': [],
+                    'strategy': 'fixed_duration'
+                },
+                'audio_keywords': [],
+                'next_agent': 'video_editor'
+            }
+            
+            debug(f"固定时长处理完成: 总片段数={total_clips}, 总时长={total_duration}秒")
+            return result
+            
+        except Exception as e:
+            error(f"处理固定时长切割策略时发生异常: {str(e)}")
+            return {
+                'error': str(e),
+                'analysis_results': {},
+                'clip_points': {},
+                'next_agent': 'error_handler'
+            }
 
     @staticmethod
     def _deduplicate_and_sort(intervals: List[Tuple[float, float]]) -> List[Tuple[float, float]]:

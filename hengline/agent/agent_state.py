@@ -15,6 +15,7 @@ class GraphState(TypedDict):
     # 输入
     videos: List[str]                    # 输入视频路径列表
     user_query: str                     # 用户描述
+    crop_strategy: dict                  # 剪辑策略
     config: dict                        # 处理配置
     
     # 处理中间状态

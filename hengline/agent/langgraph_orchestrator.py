@@ -5,6 +5,7 @@
 @Author: HengLine
 @Time: 2025/10/15 22:40
 """
+
 import os
 from typing import Dict, Any, Optional, List, Literal
 
@@ -43,8 +44,8 @@ class LangGraphOrchestrator(Runnable):
         # 构建并编译流程图
         self.graph = self._build_graph()
 
-        info("初始化基于langchain+langgraph的智能体编排器")
-        info(f"可用智能体节点: {', '.join(self.get_available_agents())}")
+        debug("初始化基于langchain+langgraph的智能体编排器")
+        debug(f"可用智能体节点: {', '.join(self.get_available_agents())}")
 
     def _build_graph(self) -> Any:
         """
@@ -52,7 +53,7 @@ class LangGraphOrchestrator(Runnable):
         完全利用langgraph的高级功能构建规范的智能体协作图
         """
         # 创建状态图，使用TypedDict作为状态类型
-        workflow = StateGraph(GraphState)
+        workflow = StateGraph[GraphState, None, GraphState, GraphState](GraphState)
 
         # 添加节点 - 使用lambda函数确保正确传递self和state参数
         workflow.add_node("orchestrator", lambda state: self._orchestrator_node(state))

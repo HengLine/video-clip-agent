@@ -6,23 +6,7 @@ import random
 import subprocess
 from utils.ffmpeg_env_utils import find_ffmpeg
 from utils.ffmpeg_run_utils import has_audio_info, get_video_duration
-
-# 简单的调试函数
-def debug(message):
-    """调试输出"""
-    print(f"[DEBUG] {message}")
-
-def info(message):
-    """信息输出"""
-    print(f"[INFO] {message}")
-
-def warning(message):
-    """警告输出"""
-    print(f"[WARNING] {message}")
-
-def error(message):
-    """错误输出"""
-    print(f"[ERROR] {message}")
+from hengline.logger import error, debug, warning, info
 
 def get_random_background_audio():
     """从source/audio目录随机选择一个背景音频文件"""
@@ -278,27 +262,33 @@ def process_video_audio_with_background(video_paths, output_dir, clip_mapping=No
         # 检查视频是否有音频
         has_audio = has_audio_info(video_path)
         
+        # 创建输出文件路径，使用唯一ID或索引确保顺序
+        if unique_id:
+            if has_audio:
+                output_path = os.path.join(output_dir, f"{unique_id}_original_audio.mp4")
+            else:
+                output_path = os.path.join(output_dir, f"{unique_id}_bg_audio.mp4")
+        else:
+            base_name = os.path.splitext(os.path.basename(video_path))[0]
+            if has_audio:
+                output_path = os.path.join(output_dir, f"{base_name}_original_audio_{i:03d}.mp4")
+            else:
+                output_path = os.path.join(output_dir, f"{base_name}_bg_audio_{i:03d}.mp4")
+        
         if has_audio:
             # 有音频的视频，确保音频时长匹配
             debug(f"[{i+1}/{len(video_paths)}] 视频 {os.path.basename(video_path)} 有音频，检查时长匹配")
-            
-            # 创建输出文件路径，使用唯一ID或索引确保顺序
-            if unique_id:
-                output_path = os.path.join(output_dir, f"{unique_id}_audio_fixed.mp4")
-            else:
-                base_name = os.path.splitext(os.path.basename(video_path))[0]
-                output_path = os.path.join(output_dir, f"{base_name}_audio_fixed_{original_index:03d}.mp4")
             
             # 确保音频时长匹配
             success, error_msg = ensure_audio_duration_match(video_path, output_path)
             
             if success:
                 processed_videos.append(output_path)
-                audio_mapping[original_index] = {
+                audio_mapping[i] = {
                     "original": video_path, 
                     "processed": output_path, 
                     "has_audio": True, 
-                    "index": original_index,
+                    "index": i,
                     "unique_id": unique_id
                 }
                 info(f"成功处理 {os.path.basename(video_path)} 的音频时长")
@@ -306,34 +296,27 @@ def process_video_audio_with_background(video_paths, output_dir, clip_mapping=No
                 warning(f"处理 {os.path.basename(video_path)} 音频时长失败: {error_msg}")
                 # 失败时使用原视频
                 processed_videos.append(video_path)
-                audio_mapping[original_index] = {
+                audio_mapping[i] = {
                     "original": video_path, 
                     "processed": video_path, 
                     "has_audio": True, 
-                    "index": original_index,
+                    "index": i,
                     "unique_id": unique_id
                 }
         else:
             # 无音频的视频，添加背景音乐
             debug(f"[{i+1}/{len(video_paths)}] 视频 {os.path.basename(video_path)} 无音频，添加背景音乐")
             
-            # 创建输出文件路径，使用唯一ID或索引确保顺序
-            if unique_id:
-                output_path = os.path.join(output_dir, f"{unique_id}_with_bg_audio.mp4")
-            else:
-                base_name = os.path.splitext(os.path.basename(video_path))[0]
-                output_path = os.path.join(output_dir, f"{base_name}_with_bg_audio_{original_index:03d}.mp4")
-            
             # 添加背景音频
             success, error_msg = add_background_audio_to_video(video_path, output_path)
             
             if success:
                 processed_videos.append(output_path)
-                audio_mapping[original_index] = {
+                audio_mapping[i] = {
                     "original": video_path, 
                     "processed": output_path, 
                     "has_audio": False, 
-                    "index": original_index,
+                    "index": i,
                     "unique_id": unique_id
                 }
                 info(f"成功为 {os.path.basename(video_path)} 添加背景音频")
@@ -341,18 +324,23 @@ def process_video_audio_with_background(video_paths, output_dir, clip_mapping=No
                 warning(f"为 {os.path.basename(video_path)} 添加背景音频失败: {error_msg}")
                 # 失败时使用原视频
                 processed_videos.append(video_path)
-                audio_mapping[original_index] = {
+                audio_mapping[i] = {
                     "original": video_path, 
                     "processed": video_path, 
                     "has_audio": False, 
-                    "index": original_index,
+                    "index": i,
                     "unique_id": unique_id
                 }
     
-    # 验证输出顺序
+    # 验证输出顺序 - 确保processed_videos的顺序与原始video_paths完全一致
     debug(f"音频处理完成，处理了{len(processed_videos)}个视频")
-    for i, mapping in audio_mapping.items():
-        debug(f"映射[{i}]: {os.path.basename(mapping['original'])} -> {os.path.basename(mapping['processed'])}")
+    debug("验证音频映射顺序:")
+    for i in range(len(video_paths)):
+        if i in audio_mapping:
+            mapping = audio_mapping[i]
+            debug(f"  索引[{i}]: {os.path.basename(mapping['original'])} -> {os.path.basename(mapping['processed'])} (音频: {'有' if mapping['has_audio'] else '无'})")
+        else:
+            debug(f"  索引[{i}]: 未找到映射信息")
     
     return processed_videos, audio_mapping
 

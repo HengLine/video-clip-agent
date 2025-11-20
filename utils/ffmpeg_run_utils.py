@@ -1,6 +1,6 @@
 """
-@FileName: ffmpeg_video_utils.py
-@Description: 
+@FileName: ffmpeg_run_utils.py
+@Description: FFmpeg运行工具类，用于封装所有FFmpeg相关的功能。提供视频时长获取、音频检测等功能的统一接口
 @Author: HengLine
 @Time: 2025/10/17 15:54
 """
@@ -479,9 +479,17 @@ def merge_videos(merge_list_file, output_path: str, ffmpeg_path: str = "ffmpeg",
                         abs_path = os.path.abspath(processed_video).replace('\\', '/')
                         outfile.write(f"file '{abs_path}'\n")
                         
-                        # 记录映射关系用于调试
+                        # 记录映射关系用于调试 - 确保索引对应正确
                         original_video = video_paths[i] if i < len(video_paths) else "unknown"
-                        debug(f"音频映射: {os.path.basename(original_video)} -> {os.path.basename(processed_video)} (索引: {i})")
+                        audio_info = audio_mapping.get(i, {})
+                        has_audio_desc = "有音频" if audio_info.get('has_audio', False) else "无音频(已添加背景)"
+                        debug(f"音频映射[{i}]: {os.path.basename(original_video)} -> {os.path.basename(processed_video)} ({has_audio_desc})")
+                
+                # 验证映射完整性
+                debug(f"映射验证: 原始视频数={len(video_paths)}, 处理后视频数={len(processed_videos)}, 音频映射数={len(audio_mapping)}")
+                if len(processed_videos) != len(video_paths):
+                    error("处理后的视频数量与原始视频数量不匹配，可能导致音频错位")
+                    return False, "音频处理导致视频数量不匹配"
                 
                 # 使用新的文件列表
                 merge_list_file = new_merge_list_file
