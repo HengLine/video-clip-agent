@@ -17,7 +17,6 @@ from hengline.logger import debug, info, warning, error
 from hengline.tool.emotion_analysis_tool import analyze_emotions as emotion_analysis_analyze_emotions
 # 导入物体检测工具
 from hengline.tool.object_detection_tool import detect_objects as object_detection_detect_objects
-from hengline.tool.requirement_analyzer_tool import get_requirement_analyzer
 # 导入场景识别工具
 from hengline.tool.scene_recognition_tool import extract_scenes as scene_recognition_extract_scenes
 # 语音识别工具
@@ -137,9 +136,6 @@ class ContentAnalyzerAgent(Runnable):
     def __init__(self):
         self.role = "视频内容分析"
         self.capabilities = ["场景检测", "物体识别", "情绪分析", "语音转文字", "元数据读取"]
-        # 初始化需求分析器
-        self.requirement_analyzer = get_requirement_analyzer()
-        info(f"初始化 {self.role} 智能体 (基于langchain实现)，集成需求分析功能")
 
     def get_tools(self) -> list[BaseTool]:
         """

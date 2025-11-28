@@ -45,6 +45,7 @@ def process_video_route():
 
         # 创建初始状态 - 使用LangGraphOrchestrator需要的格式
         initial_state = {
+            'job_id': f"job_{int(os.times().system * 1000)}",
             'videos': video_paths,  # 符合GraphState定义的字段名
             'user_query': user_query,
             'config': {}  # 输出目录使用video_editor中的默认设置

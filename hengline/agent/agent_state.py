@@ -17,16 +17,18 @@ class GraphState(TypedDict):
     user_query: str                     # 用户描述
     crop_strategy: dict                  # 剪辑策略
     config: dict                        # 处理配置
-    
+
     # 处理中间状态
+    analysis_strategy: str              # 分析策略
     analysis_results: dict              # 视频分析结果
     clip_points: dict                   # 剪切点规划
     sequence_plan: List                 # 片段序列计划
     editing_actions: List               # 编辑动作序列
-    
+
     # 输出和控制
     final_video_path: str               # 最终输出路径
     current_agent: str                  # 当前执行智能体
+    current_agent_status: bool          # 当前执行智能体状态
     next_agent: str | None              # 下一个智能体
     error: str                          # 错误信息
     error_details: Optional[Dict[str, Any]]  # 错误详情

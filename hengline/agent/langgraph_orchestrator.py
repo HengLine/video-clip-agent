@@ -18,7 +18,7 @@ from config.config import get_settings_config
 from hengline.logger import debug, info, warning, error
 from .agent_state import GraphState
 from .content_analyzer_agent import ContentAnalyzerAgent
-from .orchestrator_agent import OrchestratorAgent
+from .requirement_analyzer_agent import RequirementAnalyzerAgent
 from .quality_validator_agent import QualityValidatorAgent
 from .video_editor_agent import VideoEditorAgent
 
@@ -32,7 +32,7 @@ class LangGraphOrchestrator(Runnable):
     def __init__(self):
         # 初始化所有智能体
         self.agents = {
-            "orchestrator": OrchestratorAgent(),
+            "requirement_analyzer": RequirementAnalyzerAgent(),
             "content_analyzer": ContentAnalyzerAgent(),
             "video_editor": VideoEditorAgent(),
             "quality_validator": QualityValidatorAgent()
@@ -56,19 +56,19 @@ class LangGraphOrchestrator(Runnable):
         workflow = StateGraph[GraphState, None, GraphState, GraphState](GraphState)
 
         # 添加节点 - 使用lambda函数确保正确传递self和state参数
-        workflow.add_node("orchestrator", lambda state: self._orchestrator_node(state))
+        workflow.add_node("requirement_analyzer", lambda state: self._requirement_analyzer_node(state))
         workflow.add_node("content_analyzer", lambda state: self._content_analyzer_node(state))
         workflow.add_node("video_editor", lambda state: self._video_editor_node(state))
         workflow.add_node("quality_validator", lambda state: self._quality_validator_node(state))
         workflow.add_node("error_handler", lambda state: self._error_handler_node(state))
 
         # 设置入口点
-        workflow.set_entry_point("orchestrator")
+        workflow.set_entry_point("requirement_analyzer")
 
         # 添加条件边 - 基于状态的智能流转
         workflow.add_conditional_edges(
-            "orchestrator",
-            self._orchestrator_decider
+            "requirement_analyzer",
+            self._requirement_analyzer_decider
         )
 
         workflow.add_conditional_edges(
@@ -92,35 +92,42 @@ class LangGraphOrchestrator(Runnable):
         # 编译图 - 启用检查点以支持状态恢复和异步执行
         return workflow.compile(checkpointer=self.checkpointer)
 
-    def _orchestrator_node(self, state: GraphState) -> GraphState:
+    def _requirement_analyzer_node(self, state: GraphState) -> GraphState:
         """
-        编排器节点 - 使用langchain的chain装饰器增强功能
+        需求分析智能体节点 - 解析用户需求，为视频内容分析做准备
         """
-        info("执行编排器智能体 - 解析用户需求")
+        info("执行需求分析智能体 - 解析用户需求并准备视频分析")
 
         # 更新状态
-        state['current_agent'] = "orchestrator"
+        state['current_agent'] = "requirement_analyzer"
+        state['current_agent_status'] = False
         state['processing_status'] = "in_progress"
 
         try:
-            # 调用编排器智能体
-            result = self.agents["orchestrator"].parse_user_request(state)
+            # 调用需求分析智能体执行方法
+            result = self.agents["requirement_analyzer"].execute(state)
 
             # 合并结果到状态
             state.update(result)
 
-            # 日志记录
-            if 'task_description' in result:
-                debug(f"任务描述: {result['task_description']}")
-            if 'required_steps' in result:
-                debug(f"识别步骤: {len(result['required_steps'])}个")
+            # 增强日志记录，包含需求分析的关键信息
+            if 'requirement_analysis' in result:
+                debug(f"任务描述: {result['requirement_analysis']}")
+            if 'analysis_strategy' in result:
+                debug(f"分析策略: {result['analysis_strategy']}")
+                state['analysis_strategy'] = result['analysis_strategy']
+            if 'video_files' in result:
+                debug(f"验证视频文件数: {len(result['video_files'])}")
+
+            state['current_agent_status'] = True
 
             return state
 
         except Exception as e:
-            error(f"编排器执行异常: {str(e)}")
-            state['error'] = f"编排器异常: {str(e)}"
+            error(f"需求分析执行异常: {str(e)}")
+            state['error'] = f"需求分析异常: {str(e)}"
             state['processing_status'] = "failed"
+            state['current_agent_status'] = False
             return state
 
     def _content_analyzer_node(self, state: GraphState) -> GraphState:
@@ -131,6 +138,7 @@ class LangGraphOrchestrator(Runnable):
 
         # 更新状态
         state['current_agent'] = "content_analyzer"
+        state['current_agent_status'] = False
         state['processing_status'] = "analyzing"
 
         try:
@@ -146,12 +154,15 @@ class LangGraphOrchestrator(Runnable):
             if 'clip_points' in result:
                 debug(f"识别剪切点: {sum(len(points) for points in result['clip_points'].values())}个")
 
+            state['current_agent_status'] = True
+
             return state
 
         except Exception as e:
             error(f"内容分析异常: {str(e)}")
             state['error'] = f"内容分析异常: {str(e)}"
             state['processing_status'] = "failed"
+            state['current_agent_status'] = False
             return state
 
     def _video_editor_node(self, state: GraphState) -> GraphState:
@@ -162,6 +173,7 @@ class LangGraphOrchestrator(Runnable):
 
         # 更新状态
         state['current_agent'] = "video_editor"
+        state['current_agent_status'] = False
         state['processing_status'] = "editing"
 
         try:
@@ -177,12 +189,15 @@ class LangGraphOrchestrator(Runnable):
             if 'final_video_path' in result:
                 info(f"生成最终视频: {result['final_video_path']}")
 
+            state['current_agent_status'] = True
+
             return state
 
         except Exception as e:
             error(f"视频编辑异常: {str(e)}")
             state['error'] = f"视频编辑异常: {str(e)}"
             state['processing_status'] = "failed"
+            state['current_agent_status'] = False
             return state
 
     def _quality_validator_node(self, state: GraphState) -> GraphState:
@@ -193,6 +208,7 @@ class LangGraphOrchestrator(Runnable):
 
         # 更新状态
         state['current_agent'] = "quality_validator"
+        state['current_agent_status'] = False
         state['processing_status'] = "validating"
 
         try:
@@ -204,6 +220,7 @@ class LangGraphOrchestrator(Runnable):
 
             # 设置验证结果状态
             state['validation_passed'] = result.get('validation_passed', False)
+            state['current_agent_status'] = True
 
             # 日志记录
             if 'validation_report' in result:
@@ -215,6 +232,7 @@ class LangGraphOrchestrator(Runnable):
             error(f"质量验证异常: {str(e)}")
             state['error'] = f"质量验证异常: {str(e)}"
             state['processing_status'] = "failed"
+            state['current_agent_status'] = False
             state['validation_passed'] = False
             return state
 
@@ -232,11 +250,8 @@ class LangGraphOrchestrator(Runnable):
         state['processing_status'] = "failed"
 
         try:
-            # 调用编排器的错误处理方法
-            result = self.agents["orchestrator"].handle_error(state)
-
-            # 合并结果到状态
-            state.update(result)
+            # result = self.agents["requirement_analyzer"].handle_error(state)
+            # state.update(result)
 
             # 添加详细的错误信息
             state['error_details'] = {
@@ -254,13 +269,34 @@ class LangGraphOrchestrator(Runnable):
             return state
 
     # 条件决策函数 - 完全基于状态决定下一步
-    def _orchestrator_decider(self, state: GraphState) -> Literal["content_analyzer", "error_handler"]:
+    def _requirement_analyzer_decider(self, state: GraphState) -> Literal["content_analyzer", "error_handler"]:
         """
-        编排器的条件决策函数
+        需求分析智能体的条件决策函数
+        基于需求分析结果决定是否进入内容分析阶段
         """
-        if state.get('error') or not state.get('videos'):
-            warning("编排器决定进入错误处理流程")
+        # 检查是否存在错误
+        if state.get('error'):
+            warning(f"需求分析发现错误: {state.get('error')}, 进入错误处理流程")
             return "error_handler"
+            
+        # 检查视频文件是否存在且有效
+        if not state.get('videos'):
+            warning("需求分析未找到有效视频文件，进入错误处理流程")
+            state['error'] = "未找到有效的视频文件"
+            return "error_handler"
+            
+        # 检查需求分析是否完成
+        if not state.get('current_agent_status', False):
+            warning("需求分析未完成，进入错误处理流程")
+            state['error'] = "需求分析未成功完成"
+            return "error_handler"
+        
+        # 检查是否生成了必要的分析策略
+        if 'analysis_strategy' not in state:
+            warning("需求分析未生成分析策略，将使用默认策略继续")
+            state['analysis_strategy'] = 'default'
+        
+        info(f"需求分析完成，发现{len(state.get('videos', []))}个视频文件，将进行内容分析")
         return "content_analyzer"
 
     def _content_analyzer_decider(self, state: GraphState) -> Literal["video_editor", "error_handler"]:
@@ -337,7 +373,7 @@ class LangGraphOrchestrator(Runnable):
             return {
                 'error': f"流程执行异常: {str(e)}",
                 'processing_status': "failed",
-                'current_agent': "orchestrator"
+                'current_agent': "requirement_analyzer"
             }
 
     # 实现Runnable接口的batch方法
@@ -453,6 +489,10 @@ class LangGraphOrchestrator(Runnable):
             'error': None,
             'validation_passed': False,
             'processing_status': 'initializing',
+            'requirements_analyzed': False,
+            'analysis_strategy': None,
+            'extracted_content': [],
+            'video_files': [],
             'analysis_results': {},
             'clip_points': {},
             'sequence_plan': [],
@@ -466,10 +506,10 @@ class LangGraphOrchestrator(Runnable):
         prepared_state.update(initial_state)
 
         # 确保必要目录存在
-        if 'config' in prepared_state and 'output_dir' in prepared_state['config']:
-            os.makedirs(prepared_state['config']['output_dir'], exist_ok=True)
-        if 'config' in prepared_state and 'temp_dir' in prepared_state['config']:
-            os.makedirs(prepared_state['config']['temp_dir'], exist_ok=True)
+        # if 'config' in prepared_state and 'output_dir' in prepared_state['config']:
+        #     os.makedirs(prepared_state['config']['output_dir'], exist_ok=True)
+        # if 'config' in prepared_state and 'temp_dir' in prepared_state['config']:
+        #     os.makedirs(prepared_state['config']['temp_dir'], exist_ok=True)
 
         # 验证必要字段
         required_fields = ['videos', 'user_query']
@@ -512,7 +552,7 @@ class LangGraphOrchestrator(Runnable):
             "graph_type": "langgraph StateGraph",
             "supports_checkpointing": True,
             "checkpointer_type": "MemorySaver",
-            "entry_point": "orchestrator",
+            "entry_point": "requirement_analyzer",
             "exit_point": "END",
             "error_handling": "dedicated error_handler node"
         }
