@@ -8,10 +8,10 @@
 """
 
 # 导入路由初始化模块
-from hengline.flask.route.index_route import app as index_route
-from hengline.flask.route.file_route import app as file_route
-from hengline.flask.route.video_route import app as video_route
-from hengline.flask.route.ai_route import app as ai_route
+from hengline.flask.index_route import app as index_route
+from hengline.flask.file_route import app as file_route
+from hengline.flask.video_route import app as video_route
+from hengline.flask.ai_route import app as ai_route
 from hengline.logger import debug
 
 

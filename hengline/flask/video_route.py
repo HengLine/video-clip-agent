@@ -14,21 +14,13 @@ from flask import request, jsonify, send_from_directory, Blueprint
 from config.config import get_allowed_extensions, get_upload_dir, get_output_dir
 from hengline.logger import info, error
 from utils.file_utils import upload_files
+from hengline.agent.langgraph_orchestrator import agent_graph
 
 app = Blueprint('video_route', __name__)
-
-# 注意：agent_graph将在应用初始化时通过配置注入
-from flask import current_app
-
 
 @app.route('/api/process-video', methods=['POST'])
 def process_video_route():
     try:
-        # 获取agent_graph实例
-        agent_graph = current_app.config.get('agent_graph')
-        if not agent_graph:
-            return jsonify({'status': 'error', 'message': '智能体服务未初始化'}), 500
-
         # 获取用户请求参数
         user_query = request.form.get('query', '')
         # 也尝试从其他可能的参数名获取

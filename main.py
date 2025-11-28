@@ -18,11 +18,10 @@ import os
 import subprocess
 import sys
 
-from hengline.app_env import AppBaseEnv
+from app.app_env import AppBaseEnv
 from hengline.logger import debug, info, error
 
 # 获取当前脚本所在目录（项目根目录）
-# PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = "."
 
 # 设置编码为UTF-8以确保中文显示正常
@@ -30,7 +29,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 sys.stderr.reconfigure(encoding='utf-8')
 
 # 全局变量 - 明确指定虚拟环境为当前目录下的venv
-APP_FILE = os.path.join(PROJECT_ROOT, "hengline", "flask", "app_flask.py")  # 修复后的应用文件路径
+APP_FILE = os.path.join(PROJECT_ROOT, "app", "app_flask.py")  # 修复后的应用文件路径
 
 
 class FlaskApp(AppBaseEnv):
@@ -38,7 +37,7 @@ class FlaskApp(AppBaseEnv):
 
     def start_application(self):
         """启动应用的抽象方法"""
-        info("=== 正在启动Flask应用.... ===")
+        info("=== 正在启动 HengLine 应用.... ===")
 
         try:
             if not os.path.exists(APP_FILE):

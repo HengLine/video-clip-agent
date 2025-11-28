@@ -44,7 +44,7 @@ class OrchestratorAgent(Runnable):
 
             # 提取需求类型（示例实现，实际可能需要更复杂的NLP解析）
             needs_interleaving = any(keyword in user_query.lower() for keyword in ['穿插', '交替', '轮流'])
-            needs_transition = any(keyword in user_query.lower() for keyword in ['转场', '过渡', '效果'])
+            needs_transition = any(keyword in user_query.lower() for keyword in ['转场', '过渡', '效果', '特效'])
 
             # 制定处理策略
             strategy = {

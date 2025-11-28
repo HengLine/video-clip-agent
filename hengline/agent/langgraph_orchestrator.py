@@ -534,3 +534,7 @@ class LangGraphOrchestrator(Runnable):
         tools.append(process_video_tool)
 
         return tools
+
+
+agent_graph = LangGraphOrchestrator()
+info(f"成功加载基于langgraph的智能体编排器，可用智能体: {', '.join(agent_graph.get_available_agents())}")
