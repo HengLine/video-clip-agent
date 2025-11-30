@@ -4,6 +4,7 @@
 @Description: 用户需求分析服务模块
 @Author: HengLine
 """
+import time
 from typing import Dict, Any
 
 from config.config import get_settings_config
@@ -20,44 +21,45 @@ class RequirementAnalyzer:
         self.config = get_settings_config().get('ai_model', {})
 
     def analyze(self, user_input: str) -> Dict[str, Any]:
-        """分析用户需求
+        """分析用户需求并生成视频处理配置
         
         Args:
             user_input: 用户输入的需求描述
             
         Returns:
-            包含分析结果的字典
+            包含分析结果和视频配置的结构化字典
         """
-        if not user_input or not user_input.strip():
-            return {
-                'success': False,
-                'error': '输入不能为空',
-                'result': None
-            }
-
         try:
-            # 首先使用AI模型分析用户需求
-            ai_result = self.ai_client.analyze_user_requirement(user_input)
-
-            if not ai_result:
+            # 先验证需求有效性
+            is_valid, message = self.validate_requirement(user_input)
+            if not is_valid:
                 return {
                     'success': False,
-                    'error': 'AI分析失败，请检查配置',
-                    'result': None
+                    'error': message,
+                    'data': None
                 }
 
-            # 生成视频处理配置
+            # 直接生成视频处理配置（一步到位，减少API调用）
             video_config = self.ai_client.generate_video_config(user_input)
-
+            
+            if not video_config:
+                return {
+                    'success': False,
+                    'error': '无法生成有效的视频配置，请提供更详细的需求描述',
+                    'data': None
+                }
+            
+            # 结构化返回结果，更清晰的格式
             return {
                 'success': True,
-                'analysis': ai_result,
-                'video_config': video_config,
-                'provider': self.config.get('provider'),
-                'result': {
-                    'processed_input': user_input,
-                    'ai_analysis': ai_result,
-                    'config': video_config
+                'data': {
+                    'user_input': user_input,
+                    'video_config': video_config,
+                    'metadata': {
+                        'provider': self.config.get('provider'),
+                        'timestamp': time.time(),
+                        'validation_result': message
+                    }
                 }
             }
 
@@ -65,8 +67,8 @@ class RequirementAnalyzer:
             error(f"需求分析失败: {str(e)}")
             return {
                 'success': False,
-                'error': str(e),
-                'result': None
+                'error': f'处理过程中发生错误: {str(e)}',
+                'data': None
             }
 
     def get_supported_providers(self) -> list:
@@ -99,7 +101,7 @@ class RequirementAnalyzer:
         """
         return self.config.get('provider', 'openai')
 
-    def validate_requirement(self, user_input: str) -> Dict[str, Any]:
+    def validate_requirement(self, user_input: str):
         """验证用户需求的有效性
         
         Args:
@@ -109,30 +111,18 @@ class RequirementAnalyzer:
             验证结果
         """
         if not user_input or not user_input.strip():
-            return {
-                'valid': False,
-                'reason': '需求描述不能为空'
-            }
+            return False, '需求描述不能为空'
 
         # 检查需求长度
         if len(user_input) < 5:
-            return {
-                'valid': False,
-                'reason': '需求描述太短，请提供更详细的信息'
-            }
+            return False, '需求描述太短，请提供更详细的信息'
 
         # 检查是否包含视频处理相关关键词
         keywords = ['视频', '剪辑', '合并', '转场', '特效', '分辨率', '时长']
         if not any(keyword in user_input for keyword in keywords):
-            return {
-                'valid': True,
-                'warning': '未检测到明显的视频处理关键词，可能需要更清晰的描述'
-            }
+            return True, '未检测到明显的视频处理关键词，可能需要更清晰的描述'
 
-        return {
-            'valid': True,
-            'reason': '需求描述有效'
-        }
+        return True, '需求描述有效'
 
 
 # 创建全局需求分析器实例

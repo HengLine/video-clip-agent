@@ -117,35 +117,39 @@ class PromptManager:
         """创建默认的视频配置生成模板"""
         self.video_config_generation_template = ChatPromptTemplate.from_messages([
             SystemMessagePromptTemplate.from_template(
-                """你是一个专业的视频截取配置生成助手。请根据用户的视频截取需求分析结果，生成符合标准JSON格式的视频截取配置信息。确保输出严格是标准的JSON格式，不要包含任何JSON之外的文本，包括解释、说明或其他辅助文字。配置必须包含每个片段的准确时间点和详细信息，以确保截取操作的精确执行。"""
+                """你是一个专业的视频处理配置生成助手。请直接根据用户的视频处理需求描述，生成符合标准JSON格式的视频处理配置信息。确保输出严格是标准的JSON格式，不要包含任何JSON之外的文本，包括解释、说明或其他辅助文字。配置必须结构完整，字段明确，以确保视频处理操作的精确执行。"""
             ),
             HumanMessagePromptTemplate.from_template(
-                """基于以下视频需求分析结果，请生成视频截取的详细配置：
+                """请根据用户的视频处理需求，生成详细的视频处理配置：
 
 {user_requirement}
 
 字段说明：
 - video_type: 视频的类型，如精彩集锦、会议视频、演讲视频、教程视频等
-- segments: 需要截取的视频片段数组，每个片段必须包含名称、时间范围和理由
+- segments: 需要处理的视频片段数组，每个片段必须包含以下信息
 - segment_name: 片段的描述性名称，清晰表达片段内容和特征
 - start_time: 片段开始的时间点（秒），必须使用数字值
 - end_time: 片段结束的时间点（秒），必须使用数字值，且大于start_time
-- reasoning: 选择该片段的详细理由或说明，阐述片段的重要性
+- reasoning: 选择该片段的详细理由或说明，阐述片段的重要性或处理必要性
 - merge_segments: 是否将所有片段合并为一个视频，必须使用true或false
 - output_format: 输出视频的格式，如mp4、mov等
 - quality_settings: 视频质量设置，包含分辨率和比特率
+- style_settings: 可选的视频样式设置，如色彩调整、滤镜等
+- transition_settings: 可选的转场效果设置
 
 请生成符合以下格式的标准JSON配置：
 {output_format}
 
 重要注意事项：
 1. 严格按照要求的JSON格式输出，不要包含任何JSON之外的文本
-2. segments数组中必须包含所有需要截取的片段
+2. segments数组中必须包含所有需要处理的片段
 3. 每个片段必须有明确的数字类型的start_time和end_time（秒）
 4. 确保end_time大于start_time
 5. merge_segments必须设置为true或false
 6. 为每个片段提供详细且有意义的reasoning字段
-7. 请确保生成的JSON可以被标准JSON解析器正确解析"""
+7. 请确保生成的JSON可以被标准JSON解析器正确解析
+8. 对于用户未明确指定的时间点，根据需求描述的逻辑合理推断
+9. 如果用户没有指定具体的视频长度，提供合理的默认值"""
             )
         ])
 
@@ -153,7 +157,7 @@ class PromptManager:
         """获取视频处理需求分析的格式化消息"""
         try:
             messages = self.video_processing_template.format_messages(user_input=user_input)
-            return [{"role": "system" if isinstance(msg, SystemMessage) else "user",
+            return [{"role": "system" if isinstance(msg, SystemMessage) else "human",
                      "content": msg.content} for msg in messages]
         except Exception as e:
             error(f"生成视频处理提示词失败: {str(e)}")
@@ -323,10 +327,10 @@ def get_user_requirement_prompt(user_input) -> list:
 
 def get_generate_video_prompt(user_requirement) -> list:
     """
-    获取视频截取配置生成的提示词模板（使用LangChain管理）
+    获取视频处理配置生成的提示词模板（使用LangChain管理）
     
     Args:
-        user_requirement: 用户的视频截取需求分析结果
+        user_requirement: 用户的视频处理需求描述
         
     Returns:
         格式化的消息列表，包含系统提示和用户提示
@@ -342,7 +346,7 @@ def get_generate_video_prompt(user_requirement) -> list:
         prompt_config = get_prompt_config()
         # 从配置文件中获取系统提示词
         system_prompt = prompt_config.get('video_config_generation', {}).get('system_prompt',
-                                                                             '你是一个专业的视频截取配置生成助手。请根据用户的视频处理需求分析结果，生成符合标准JSON格式的视频截取配置信息。确保输出严格是标准的JSON格式，不要包含任何JSON之外的文本。')
+                                                                             '你是一个专业的视频处理配置生成助手。请直接根据用户的视频处理需求描述，生成符合标准JSON格式的视频处理配置信息。确保输出严格是标准的JSON格式，不要包含任何JSON之外的文本。')
 
         # 从配置文件中获取预定义的输出格式
         output_format_template = prompt_config.get('video_config_generation', {}).get('output_format', {
@@ -351,8 +355,8 @@ def get_generate_video_prompt(user_requirement) -> list:
                 {
                     "segment_name": "片段名称",
                     "start_time": 0,
-                    "end_time": 0,
-                    "reasoning": "选择理由"
+                    "end_time": 30,
+                    "reasoning": "根据需求确定的重要片段"
                 }
             ],
             "merge_segments": True,
@@ -360,19 +364,29 @@ def get_generate_video_prompt(user_requirement) -> list:
             "quality_settings": {
                 "resolution": "原分辨率",
                 "bitrate": "原比特率"
-            }
+            },
+            "style_settings": {},
+            "transition_settings": {}
         })
 
         # 生成格式示例
         output_format = json.dumps(output_format_template, ensure_ascii=False, indent=2)
 
-        # 获取字段描述作为额外提示
-        field_descriptions = prompt_config.get('video_config_generation', {}).get('field_descriptions', {})
-        descriptions_text = "字段说明：\n"
-        for field, desc in field_descriptions.items():
-            descriptions_text += f"- {field}: {desc}\n"
+        # 字段描述
+        field_descriptions = "字段说明：\n"
+        field_descriptions += "- video_type: 视频的类型，如精彩集锦、会议视频、演讲视频、教程视频等\n"
+        field_descriptions += "- segments: 需要处理的视频片段数组，每个片段必须包含名称、时间范围和理由\n"
+        field_descriptions += "- segment_name: 片段的描述性名称，清晰表达片段内容和特征\n"
+        field_descriptions += "- start_time: 片段开始的时间点（秒），必须使用数字值\n"
+        field_descriptions += "- end_time: 片段结束的时间点（秒），必须使用数字值，且大于start_time\n"
+        field_descriptions += "- reasoning: 选择该片段的详细理由或说明，阐述片段的重要性或处理必要性\n"
+        field_descriptions += "- merge_segments: 是否将所有片段合并为一个视频，必须使用true或false\n"
+        field_descriptions += "- output_format: 输出视频的格式，如mp4、mov等\n"
+        field_descriptions += "- quality_settings: 视频质量设置，包含分辨率和比特率\n"
+        field_descriptions += "- style_settings: 可选的视频样式设置，如色彩调整、滤镜等\n"
+        field_descriptions += "- transition_settings: 可选的转场效果设置\n"
 
-        user_prompt = f"基于以下视频需求分析结果，请生成视频截取的详细配置：\n\n{user_requirement}\n\n{descriptions_text}\n\n请生成符合以下格式的标准JSON配置：\n{output_format}\n\n重要注意事项：\n1. 严格按照要求的JSON格式输出，不要包含任何JSON之外的文本\n2. segments数组中必须包含所有需要截取的片段\n3. 每个片段必须有明确的数字类型的start_time和end_time（秒）\n4. 确保end_time大于start_time\n5. merge_segments必须设置为true或false\n6. 为每个片段提供详细且有意义的reasoning字段\n7. 请确保生成的JSON可以被标准JSON解析器正确解析"
+        user_prompt = f"请根据用户的视频处理需求，生成详细的视频处理配置：\n\n{user_requirement}\n\n{field_descriptions}\n\n请生成符合以下格式的标准JSON配置：\n{output_format}\n\n重要注意事项：\n1. 严格按照要求的JSON格式输出，不要包含任何JSON之外的文本\n2. segments数组中必须包含所有需要处理的片段\n3. 每个片段必须有明确的数字类型的start_time和end_time（秒）\n4. 确保end_time大于start_time\n5. merge_segments必须设置为true或false\n6. 为每个片段提供详细且有意义的reasoning字段\n7. 请确保生成的JSON可以被标准JSON解析器正确解析\n8. 对于用户未明确指定的时间点，根据需求描述的逻辑合理推断\n9. 如果用户没有指定具体的视频长度，提供合理的默认值"
 
         return [
             {"role": "system", "content": system_prompt},

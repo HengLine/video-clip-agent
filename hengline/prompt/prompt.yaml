@@ -82,9 +82,3 @@ video_config_generation:
       segment_name: 结尾亮点
       start_time: 90
     video_type: 精彩集锦
-  system_prompt: 你是一个专业的视频截取配置生成助手。请根据用户的视频截取需求分析结果，生成符合标准JSON格式的视频截取配置信息。确保输出严格是标准的JSON格式，不要包含任何JSON之外的文本，包括解释、说明或其他辅助文字。配置必须包含每个片段的准确时间点和详细信息，以确保截取操作的精确执行。
-
-video_processing:
-  segmentation_instructions: |
-    请直接提供分析结果，不要包含任何解释性文字、建议或交互式内容。只需要返回简洁的分析结果。
-  system_prompt: 你是一个专业的视频截取助手，负责精确分析用户的视频片段截取需求。请根据用户的描述，简洁地识别需要截取的视频片段特征和关键信息。
