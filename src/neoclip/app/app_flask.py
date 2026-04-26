@@ -21,11 +21,11 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(project_root)
 
 # 导入自定义日志模块
-from hengline.logger import debug, info, warning
-from config.config import get_flask_host, get_model_dir
+from neoclip.neopen.logger import debug, info, warning
+from neoclip.config.config import get_flask_host, get_model_dir
 
 # 初始化Flask应用
-template_dir = os.path.join(project_root, 'hengline/flask/templates')
+template_dir = os.path.join(project_root, 'neopen/flask/templates')
 app = Flask(__name__, template_folder=template_dir)
 app.config['JSON_AS_ASCII'] = False  # 允许非ASCII字符
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)

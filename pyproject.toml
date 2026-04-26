@@ -1,40 +1,259 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "neoclip"
 version = "0.1.0"
-description = "A package with examples and resources"
+description = "AI-powered video clipping agent with emotion analysis, scene recognition, and intelligent editing"
 readme = "README.md"
 authors = [
-    {name = "Your Name", email = "you@example.com"}
+    {name = "Your Name", email = "your.email@example.com"}
 ]
-requires-python = ">=3.8"
+license = {text = "MIT"}
+requires-python = ">=3.9"
+keywords = ["video", "clip", "ai", "langgraph", "flask", "ffmpeg", "emotion-analysis"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Multimedia :: Video",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
 
-# 关键：指定要包含的数据文件夹
+# 核心依赖（从 requirements.txt 转换）
+dependencies = [
+    # AI与语言处理
+    "langchain==0.3.27",
+    "langgraph==0.6.10",
+    "transformers>=4.30.0",
+    "torch>=2.0.0",
+
+    # Web框架
+    "flask>=2.0.0",
+    "flask-cors>=3.0.10",
+    "werkzeug>=2.3.0",
+
+    # OpenAI API 客户端
+    "openai>=1.0.0",
+    "httpx>=0.24.0",
+
+    # 视频处理相关库
+    "moviepy>=1.0.3",
+    "opencv-python>=4.8.0",
+    "ffmpeg-python>=0.2.0",
+    "pydub>=0.25.0",
+
+    # 语音识别
+    "speechrecognition>=3.14.0",
+    "librosa>=0.10.0",
+    "pipwin>=0.5.1",
+
+    # 数据分析与科学计算
+    "numpy>=1.23.0,<2.3.0",
+    "pandas>=2.0.0",
+    "scikit-learn>=1.3.0",
+
+    # 日志处理
+    "python-json-logger>=2.0.0",
+    "colorama>=0.4.6",
+
+    # 环境变量管理
+    "python-dotenv>=1.0.0",
+
+    # YAML配置文件处理
+    "pyyaml>=6.0",
+
+    # 其他依赖
+    "requests>=2.25.0,<3.0.0",
+    "urllib3>=1.25.4,<2.1",
+    "tqdm>=4.60.0",
+]
+
+# 可选依赖分组
+[project.optional-dependencies]
+# 开发工具
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-mock>=3.10.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+    "pre-commit>=3.0.0",
+]
+
+# GPU 支持（可选，替代 torch 的 CPU 版本）
+gpu = [
+    "torch>=2.0.0 --index-url https://download.pytorch.org/whl/cu118",
+]
+
+# 文档生成
+docs = [
+    "sphinx>=6.0.0",
+    "sphinx-rtd-theme>=1.0.0",
+    "myst-parser>=1.0.0",
+]
+
+# 性能分析
+profiling = [
+    "memory-profiler>=0.61.0",
+    "line-profiler>=4.0.0",
+]
+
+# 所有依赖（开发+文档+性能）
+all = [
+    "neoclip[dev,docs,profiling]",
+]
+
+# 项目 URLs
+[project.urls]
+Homepage = "https://github.com/neopen/video-clip-agent"
+Repository = "https://github.com/neopen/video-clip-agent.git"
+Documentation = "https://clip.pengline.cn"
+Issues = "https://github.com/neopen/video-clip-agent/issues"
+Changelog = "https://github.com/neopen/video-clip-agent/blob/main/CHANGELOG.md"
+
+# 命令行入口点
+[project.scripts]
+neoclip = "neoclip.app.app_flask:main"
+neoclip-server = "neoclip.app.app_flask:run_server"
+neoclip-config = "neoclip.config.config:cli"
+
+# 包查找配置
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["your_package_name*"]
-exclude = ["tests*", "examples*"]
+include = ["neoclip*", "neoclip.*"]
+exclude = ["tests*", "examples*", "docs*"]
 
+# 包数据文件
 [tool.setuptools.package-data]
-your_package_name = [
+neoclip = [
+    "config/*.json",
     "data/*.json",
-    "resources/**/*.png",   # 递归包含子目录
-    "resources/**/*.ttf",
+    "neopen/prompt/*.yaml",
+    "neopen/prompt/*.yml",
+    "flask/templates/*.html",
+    "flask/static/**/*",
+    "resources/fonts/*.ttf",
+    "resources/icons/*.png",
 ]
 
-# 包含所有测试和示例（不打包，但上传到源码发布）
+# Black 代码格式化配置
+[tool.black]
+line-length = 100
+target-version = ['py39', 'py310', 'py311', 'py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+    \.eggs
+  | \.git
+  | \.venv
+  | \.env
+  | build
+  | dist
+  | __pycache__
+)/
+'''
+
+# Ruff 代码检查配置
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "C",   # flake8-comprehensions
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+    "SIM", # flake8-simplify
+]
+ignore = [
+    "E501",  # line too long (handled by black)
+    "B008",  # do not perform function calls in argument defaults
+    "C901",  # too complex
+]
+
+[tool.ruff.isort]
+known-first-party = ["neoclip"]
+
+# pytest 配置
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_functions = "test_*"
+python_classes = "Test*"
+addopts = [
+    "-v",
+    "--tb=short",
+    "--strict-markers",
+    "--strict-config",
+    "--cov=neoclip",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "gpu: marks tests that require GPU",
+]
+
+# mypy 类型检查配置
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+disallow_untyped_defs = false
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+
+# coverage.py 配置
+[tool.coverage.run]
+source = ["src/neoclip"]
+omit = ["*/tests/*", "*/test_*", "*/__pycache__/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if __name__ == .__main__.:",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if False:",
+]
+
+# 项目元数据（用于 setuptools）
 [tool.setuptools]
+zip-safe = false
 include-package-data = true
 
-# 开发依赖（用于测试和示例运行）
-[project.optional-dependencies]
-dev = [
-    "pytest>=7.0",
-    "pytest-cov",
-    "black",      # 代码格式化
-    "ruff",       # 代码检查
-]
-examples = [
-    "jupyter",
-    "matplotlib",   # 如果你的示例需要绘图
-    "pandas",       # 示例的数据处理依赖
+# 可选：配置 PyPI 的 long description 内容类型
+[tool.setuptools.dynamic]
+version = {attr = "neoclip.__version__"}
+
+# 预提交钩子配置（可选，但推荐）
+[tool.pre-commit]
+repos = [
+    {repo = "https://github.com/pre-commit/pre-commit-hooks", rev = "v4.4.0", hooks = [
+        "end-of-file-fixer",
+        "trailing-whitespace",
+        "check-yaml",
+        "check-json",
+    ]},
+    {repo = "https://github.com/psf/black", rev = "23.3.0", hooks = ["black"]},
+    {repo = "https://github.com/charliermarsh/ruff-pre-commit", rev = "v0.0.275", hooks = ["ruff"]},
 ]
