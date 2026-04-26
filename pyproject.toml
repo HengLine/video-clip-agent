@@ -1,0 +1,40 @@
+[project]
+name = "neoclip"
+version = "0.1.0"
+description = "A package with examples and resources"
+readme = "README.md"
+authors = [
+    {name = "Your Name", email = "you@example.com"}
+]
+requires-python = ">=3.8"
+
+# 关键：指定要包含的数据文件夹
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["your_package_name*"]
+exclude = ["tests*", "examples*"]
+
+[tool.setuptools.package-data]
+your_package_name = [
+    "data/*.json",
+    "resources/**/*.png",   # 递归包含子目录
+    "resources/**/*.ttf",
+]
+
+# 包含所有测试和示例（不打包，但上传到源码发布）
+[tool.setuptools]
+include-package-data = true
+
+# 开发依赖（用于测试和示例运行）
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov",
+    "black",      # 代码格式化
+    "ruff",       # 代码检查
+]
+examples = [
+    "jupyter",
+    "matplotlib",   # 如果你的示例需要绘图
+    "pandas",       # 示例的数据处理依赖
+]
