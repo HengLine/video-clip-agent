@@ -6,10 +6,9 @@ uploads/
 .venv/
 env/
 .env/
-data/
+/data
 venv/
 temp/
-uploads/
 .git/
 .svn/
 .env

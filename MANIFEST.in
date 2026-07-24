@@ -1,0 +1,24 @@
+# 基本文件
+include LICENSE
+include README.md
+include pyproject.toml
+
+# 配置和示例
+include .env.example
+include .pre-commit-config.yaml
+recursive-include examples *.py *.md *.txt
+
+# 静态资源（不打包但包含在源码分发包中）
+recursive-include assets *.PNG *.png *.mp3
+recursive-include docs *.md *.rst
+
+# 包内数据（已经通过 pyproject.toml 的 package-data 指定，但这里也可以）
+recursive-include src/neoclip/config *.json
+recursive-include src/neoclip/data *.json
+recursive-include src/neoclip/neopen/prompt *.yaml *.yml
+recursive-include src/neoclip/flask/templates *.html
+
+# 排除不需要的
+global-exclude *.pyc
+global-exclude __pycache__
+global-exclude .DS_Store

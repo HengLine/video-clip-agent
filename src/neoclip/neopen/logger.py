@@ -299,7 +299,7 @@ class Logger:
         self.logger.critical(message)
 
 # 创建全局日志实例
-logger = Logger(name="hengline")
+logger = Logger(name="neopen")
 
 # 方便使用的函数
 
