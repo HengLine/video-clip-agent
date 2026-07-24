@@ -2,7 +2,7 @@
 """
 @FileName: config_utils.py
 @Description: 配置工具模块，负责读取和管理应用配置
-@Author: HengLine
+@Author: neopen
 @Time: 2025/08 - 2025/11
 """
 import os
@@ -10,7 +10,7 @@ import json
 from typing import Dict, Any
 from dotenv import load_dotenv
 
-from hengline.logger import debug, info, error
+from neopen.logger import debug, info, error
 
 # 加载.env文件中的环境变量
 load_dotenv()

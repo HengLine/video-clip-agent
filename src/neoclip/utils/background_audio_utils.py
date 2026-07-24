@@ -6,7 +6,7 @@ import random
 import subprocess
 from utils.ffmpeg_env_utils import find_ffmpeg
 from utils.ffmpeg_run_utils import has_audio_info, get_video_duration
-from hengline.logger import error, debug, warning, info
+from neopen.logger import error, debug, warning, info
 
 def get_random_background_audio():
     """从source/audio目录随机选择一个背景音频文件"""

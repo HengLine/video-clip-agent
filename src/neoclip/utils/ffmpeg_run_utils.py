@@ -1,7 +1,7 @@
 """
 @FileName: ffmpeg_run_utils.py
 @Description: FFmpeg运行工具类，用于封装所有FFmpeg相关的功能。提供视频时长获取、音频检测等功能的统一接口
-@Author: HengLine
+@Author: neopen
 @Time: 2025/10/17 15:54
 """
 
@@ -11,7 +11,7 @@ import subprocess
 import uuid
 from typing import Dict, Any
 
-from hengline.logger import error, debug, warning
+from neopen.logger import error, debug, warning
 from utils.log_utils import print_log_exception
 
 

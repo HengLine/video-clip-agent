@@ -3,7 +3,7 @@
 """
 @FileName: video_processing_client.py
 @Description: 视频处理客户端示例，展示如何使用AI分析技术处理视频
-@Author: HengLine
+@Author: neopen
 @Time: 2025/11
 """
 

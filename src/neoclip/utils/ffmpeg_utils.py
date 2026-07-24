@@ -3,7 +3,7 @@
 @FileName: ffmpeg_utils.py
 @Description: FFmpeg工具类，用于封装所有FFmpeg相关的功能。提供视频片段提取、视频合并、转码等功能的统一接口
         https://ffmpeg.org/ffmpeg.html
-@Author: HengLine
+@Author: neopen
 @Time: 2025/10 - 2025/11
 """
 import os
@@ -11,7 +11,7 @@ import subprocess
 import uuid
 
 from config.config import get_video_rendering_config
-from hengline.logger import debug, error, warning, info
+from neopen.logger import debug, error, warning, info
 from utils.ffmpeg_env_utils import find_ffmpeg, check_xfade_support
 from utils.ffmpeg_run_utils import get_video_duration, merge_videos, transcode_merge_video, codec_video, \
     scale_video, apply_xfade_transition, apply_basic_transition

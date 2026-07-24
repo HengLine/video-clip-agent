@@ -1,73 +1,78 @@
-import os
-import sys
-import uuid
-from datetime import datetime
-from hengline.logger import debug, info, error, warning
+"""
+@FileName: file_utils.py
+@Description: 
+@Author: HiPeng
+@Github: https://github.com/neopen/story-shot-agent
+@Time: 2026/1/18 12:24
+"""
+import json
+from typing import Any
+from pathlib import Path
+import importlib.resources as resources
 
-def upload_file(file, upload_dir, allowed_extensions=None):
-    """
-    上传文件到指定目录
-    :param file: Flask上传的文件对象
-    :param upload_dir: 目标上传目录
-    :return: 上传后的文件路径
-    """
-    try:
-        # 路径参数验证
-        if not upload_dir or not isinstance(upload_dir, str):
-            error("上传目录必须是有效的字符串")
-            return None
-        
-        # 确保上传目录存在
-        if not os.path.exists(upload_dir):
-            try:
-                os.makedirs(upload_dir, exist_ok=True)
-                debug(f"创建上传目录: {upload_dir}")
-            except Exception as e:
-                error(f"创建上传目录失败: {str(e)}")
-                return None
-                
-        if file:
-            # 获取文件名，处理空文件名情况
-            filename = file.filename if file.filename else f"file_{datetime.now().strftime('%Y%m%d%H%M%S')}"
-            
-            # 检查文件扩展名是否在允许的列表中
-            if allowed_extensions:
-                # 如果没有扩展名，直接返回None
-                if '.' not in filename:
-                    warning(f"文件没有扩展名: {filename}")
-                    return None
-                
-                file_ext = filename.rsplit('.', 1)[1].lower()
-                if file_ext not in allowed_extensions:
-                    warning(f"文件扩展名 {file_ext} 不在允许的列表中: {allowed_extensions}")
-                    return None
-                    
-            # 添加UUID以避免文件名冲突
-            # unique_filename = f"{uuid.uuid4().hex[:8]}_{filename}"
-            filepath = os.path.join(upload_dir, filename)
-            
-            # 保存文件
-            file.save(filepath)
-            debug(f"文件上传成功: {filepath}")
-            return filepath
-        else:
-            debug("没有收到文件对象")
-            return None
-    except Exception as e:
-        error(f"文件上传过程出错: {str(e)}")
-        return None
+from penshot.utils.obj_utils import dict_to_obj
 
 
-def upload_files(files, upload_dir, allowed_extensions=None):
+def load_from_json(json_path: str) -> str:
+    """从JSON文件加载数据"""
+    with open(json_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+
+    return data
+
+
+def load_from_obj(json_path: str, cls) -> Any:
+    """从JSON文件加载数据"""
+    return dict_to_obj(load_from_json(json_path), cls)
+
+
+def save_to_json(cls: Any, file_name):
+    # 保存为JSON
+    with open(f"{file_name}.json", "w", encoding="utf-8") as f:
+        json.dump(cls.to_dict(), f, ensure_ascii=False, indent=2)
+
+
+# =============== 资源文件路径获取 ===============
+def get_file_path(package, file_name) -> Path:
+    """获取配置文件路径"""
+    with resources.path(f"penshot.{package}", file_name) as path:
+        return Path(path)
+
+def get_subdir_path(subdir: str, filename: str) -> Path:
     """
-    上传多个文件到指定目录
-    :param files: Flask上传的文件对象列表
-    :param upload_dir: 目标上传目录
-    :return: 上传后的文件路径列表
+    获取包内文件路径（安全版本）
+
+    参数:
+        subdir: 子目录名（如 "data", "config"），可以是空字符串
+        filename: 文件名
+
+    返回:
+        Path: 文件的绝对路径
     """
-    uploaded_files = []
-    for file in files:
-        filepath = upload_file(file, upload_dir, allowed_extensions)
-        if filepath:
-            uploaded_files.append(filepath)
-    return uploaded_files
+    # Python 3.9+
+    if subdir:
+        resource_path = f"{subdir}/{filename}"
+    else:
+        resource_path = filename
+
+    with resources.path("penshot", resource_path) as path:
+        return Path(path)
+
+
+def get_env_path(file_name) -> Path:
+    """获取配置文件路径"""
+    return get_file_path("config.env", file_name)
+
+def get_config_path(file_name) -> Path:
+    """获取配置文件路径"""
+    return get_file_path("config", file_name)
+
+
+def get_logging_path() -> Path:
+    """获取配置文件路径"""
+    return get_config_path("logging.yaml")
+
+
+def get_settings_path() -> Path:
+    """获取配置文件路径"""
+    return get_config_path("settings.yaml")

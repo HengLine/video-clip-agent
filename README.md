@@ -31,7 +31,7 @@
 2. 克隆项目到本地
 
    ```sql
-   git clone https://github.com/HengLine/video-clip-agent.git
+   git clone https://github.com/neopen/video-clip-agent.git
    ```
 
 3. 配置环境、安装依赖包：

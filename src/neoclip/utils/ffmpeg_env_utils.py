@@ -1,13 +1,13 @@
 """
 @FileName: ffmpeg_env_utils.py
 @Description: FFmpeg环境工具类，用于封装所有FFmpeg相关的功能。提供查找FFmpeg可执行文件路径等功能的统一接口
-@Author: HengLine
+@Author: neopen
 @Time: 2025/10/17 16:14
 """
 import os
 import subprocess
 
-from hengline.logger import debug, error
+from neopen.logger import debug, error
 
 
 def find_ffmpeg() -> str:
