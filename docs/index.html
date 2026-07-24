@@ -11,17 +11,35 @@
     href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap"
     rel="stylesheet">
   <style>
-    /* 全局重置与基础 */
+    /* 基础重置与变量 */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
 
+    :root {
+      --color-bg: #ffffff;
+      --color-surface: #f8fafc;
+      --color-border: #eef2f6;
+      --color-text-primary: #0b1a2f;
+      --color-text-secondary: #3a4e62;
+      --color-text-muted: #6b7f92;
+      --color-accent-blue: #2563eb;
+      --color-accent-indigo: #4f46e5;
+      --color-accent-purple: #7c3aed;
+      --color-gradient-start: #2563eb;
+      --color-gradient-end: #7c3aed;
+      --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.03);
+      --shadow-hover: 0 12px 32px rgba(37, 99, 235, 0.08), 0 4px 12px rgba(0, 0, 0, 0.02);
+      --radius-card: 20px;
+      --radius-pill: 60px;
+    }
+
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background-color: #ffffff;
-      color: #1a2634;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--color-bg);
+      color: var(--color-text-primary);
       line-height: 1.6;
       -webkit-font-smoothing: antialiased;
     }
@@ -32,7 +50,7 @@
       padding: 0 28px;
     }
 
-    /* 排版系统 */
+    /* 排版 */
     h1,
     h2,
     h3 {
@@ -50,39 +68,38 @@
     h2 {
       font-size: 2rem;
       margin-bottom: 0.5rem;
-      letter-spacing: -0.02em;
     }
 
     h3 {
-      font-size: 1.25rem;
+      font-size: 1.2rem;
       margin-bottom: 0.5rem;
     }
 
-    a {
-      color: #1a2634;
-      text-decoration: none;
-      transition: color 0.2s ease;
-    }
-
-    a:hover {
-      color: #4f7fff;
-    }
-
     .text-muted {
-      color: #5b6f82;
+      color: var(--color-text-secondary);
       font-size: 1.05rem;
       max-width: 640px;
     }
 
     .text-small {
       font-size: 0.9rem;
-      color: #5b6f82;
+      color: var(--color-text-muted);
     }
 
-    /* 布局组件 */
+    a {
+      color: var(--color-text-primary);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    a:hover {
+      color: var(--color-accent-blue);
+    }
+
+    /* 布局 */
     .section {
-      padding: 60px 0 40px;
-      border-bottom: 1px solid #eef2f6;
+      padding: 64px 0 48px;
+      border-bottom: 1px solid var(--color-border);
     }
 
     .section:last-of-type {
@@ -103,7 +120,7 @@
       justify-content: space-between;
       align-items: center;
       padding: 24px 0 20px;
-      border-bottom: 1px solid #eef2f6;
+      border-bottom: 1px solid var(--color-border);
       flex-wrap: wrap;
       gap: 16px;
     }
@@ -112,7 +129,7 @@
       font-size: 1.5rem;
       font-weight: 700;
       letter-spacing: -0.02em;
-      background: linear-gradient(135deg, #1a2634 60%, #4f7fff);
+      background: linear-gradient(135deg, var(--color-gradient-start), var(--color-gradient-end));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -120,8 +137,8 @@
 
     .logo span {
       font-weight: 400;
-      -webkit-text-fill-color: #5b6f82;
-      background: none;
+      color: var(--color-text-muted);
+      -webkit-text-fill-color: var(--color-text-muted);
     }
 
     .nav-links {
@@ -133,34 +150,10 @@
       flex-wrap: wrap;
     }
 
-    .nav-links a {
-      color: #1a2634;
-      position: relative;
-    }
-
-    .nav-links a::after {
-      content: '';
-      position: absolute;
-      width: 0;
-      height: 2px;
-      bottom: -4px;
-      left: 0;
-      background: linear-gradient(90deg, #4f7fff, #7c6cf0);
-      transition: width 0.2s ease;
-    }
-
-    .nav-links a:hover::after {
-      width: 100%;
-    }
-
-    .nav-links a:hover {
-      color: #1a2634;
-    }
-
     .btn-outline {
-      border: 1.5px solid #d0d8e0;
+      border: 1.5px solid var(--color-border);
       padding: 6px 20px;
-      border-radius: 60px;
+      border-radius: var(--radius-pill);
       font-weight: 600;
       font-size: 0.9rem;
       transition: all 0.2s;
@@ -168,52 +161,18 @@
     }
 
     .btn-outline:hover {
-      border-color: #4f7fff;
-      background: #f5f9ff;
-      box-shadow: 0 2px 8px rgba(79, 127, 255, 0.08);
-    }
-
-    .btn-outline::after {
-      display: none;
+      border-color: var(--color-accent-blue);
+      background: #f0f7ff;
+      color: var(--color-accent-blue);
     }
 
     /* Hero */
     .hero {
-      padding: 48px 0 56px;
+      padding: 56px 0 64px;
       text-align: center;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .hero::before {
-      content: '';
-      position: absolute;
-      top: -40%;
-      right: -20%;
-      width: 600px;
-      height: 600px;
-      background: radial-gradient(circle, rgba(79, 127, 255, 0.04) 0%, transparent 70%);
-      border-radius: 50%;
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    .hero::after {
-      content: '';
-      position: absolute;
-      bottom: -30%;
-      left: -10%;
-      width: 500px;
-      height: 500px;
-      background: radial-gradient(circle, rgba(124, 108, 240, 0.04) 0%, transparent 70%);
-      border-radius: 50%;
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    .hero * {
-      position: relative;
-      z-index: 1;
+      background: radial-gradient(ellipse at 70% 20%, #eef4ff 0%, #ffffff 70%);
+      border-radius: 32px;
+      margin: 12px 0 8px;
     }
 
     .hero h1 {
@@ -222,7 +181,7 @@
     }
 
     .hero .highlight {
-      background: linear-gradient(145deg, #1a2634, #4f7fff);
+      background: linear-gradient(135deg, var(--color-gradient-start), var(--color-gradient-end));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -230,7 +189,7 @@
 
     .hero p {
       font-size: 1.2rem;
-      color: #3a4e62;
+      color: var(--color-text-secondary);
       max-width: 680px;
       margin: 0 auto 36px;
     }
@@ -243,63 +202,61 @@
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, #1a2634, #2c3e50);
+      background: linear-gradient(135deg, var(--color-gradient-start), var(--color-gradient-end));
       color: white;
       padding: 12px 40px;
-      border-radius: 60px;
+      border-radius: var(--radius-pill);
       font-weight: 600;
       font-size: 1rem;
       border: none;
-      transition: all 0.25s ease;
+      transition: transform 0.2s, box-shadow 0.2s;
       cursor: default;
-      box-shadow: 0 4px 12px rgba(26, 38, 52, 0.12);
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
     }
 
     .btn-primary:hover {
       transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(26, 38, 52, 0.18);
-      background: linear-gradient(135deg, #2c3e50, #1a2634);
+      box-shadow: 0 8px 24px rgba(37, 99, 235, 0.3);
     }
 
     .btn-secondary {
       background: transparent;
-      color: #1a2634;
+      color: var(--color-text-primary);
       padding: 12px 36px;
-      border-radius: 60px;
+      border-radius: var(--radius-pill);
       font-weight: 600;
       font-size: 1rem;
-      border: 1.5px solid #d0d8e0;
-      transition: all 0.25s ease;
+      border: 1.5px solid var(--color-border);
+      transition: all 0.2s;
       cursor: default;
     }
 
     .btn-secondary:hover {
-      border-color: #4f7fff;
-      background: #f5f9ff;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(79, 127, 255, 0.08);
+      border-color: var(--color-accent-blue);
+      background: #f8fbff;
+      color: var(--color-accent-blue);
     }
 
-    /* 核心理念标语 */
+    /* 核心理念条 */
     .principle-bar {
-      background: linear-gradient(135deg, #f7f9fc 0%, #f0f4fe 100%);
-      border-radius: 20px;
+      background: var(--color-surface);
+      border-radius: var(--radius-card);
       padding: 24px 32px;
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       justify-content: center;
       gap: 16px 48px;
-      border: 1px solid rgba(79, 127, 255, 0.10);
+      border: 1px solid var(--color-border);
       margin: 12px 0 8px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+      box-shadow: var(--shadow-card);
     }
 
     .principle-bar .pill {
-      background: linear-gradient(135deg, #1a2634, #2c3e50);
+      background: linear-gradient(135deg, var(--color-gradient-start), var(--color-gradient-end));
       color: white;
       padding: 4px 20px;
-      border-radius: 40px;
+      border-radius: var(--radius-pill);
       font-size: 0.8rem;
       font-weight: 600;
       letter-spacing: 0.3px;
@@ -307,10 +264,10 @@
 
     .principle-item {
       font-weight: 500;
-      color: #1a2634;
+      color: var(--color-text-primary);
     }
 
-    /* 网格卡片 */
+    /* 卡片网格 */
     .grid-2col {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -325,53 +282,27 @@
       margin: 24px 0 8px;
     }
 
-    .grid-4col {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 20px;
-      margin: 24px 0 8px;
-    }
-
     .card {
-      background: #ffffff;
-      border: 1px solid #eef2f6;
-      border-radius: 20px;
+      background: var(--color-bg);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-card);
       padding: 28px 24px;
-      transition: all 0.25s ease;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 3px;
-      background: linear-gradient(90deg, #4f7fff, #7c6cf0);
-      opacity: 0;
-      transition: opacity 0.3s ease;
+      transition: box-shadow 0.25s ease, transform 0.2s ease;
+      box-shadow: var(--shadow-card);
     }
 
     .card:hover {
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
-      border-color: rgba(79, 127, 255, 0.15);
-      transform: translateY(-2px);
-    }
-
-    .card:hover::before {
-      opacity: 1;
+      box-shadow: var(--shadow-hover);
+      transform: translateY(-4px);
     }
 
     .card h3 {
       margin-bottom: 8px;
-      color: #1a2634;
     }
 
     .card p,
     .card li {
-      color: #3a4e62;
+      color: var(--color-text-secondary);
       font-size: 0.95rem;
     }
 
@@ -382,9 +313,9 @@
     }
 
     .card li {
-      padding: 6px 0 6px 20px;
-      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="%234f7fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>') left center no-repeat;
-      background-size: 14px;
+      padding: 6px 0 6px 24px;
+      background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%234f46e5" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>') left center no-repeat;
+      background-size: 16px;
       border-bottom: 1px solid #f2f5f8;
     }
 
@@ -392,49 +323,43 @@
       border-bottom: none;
     }
 
-    /* 架构流程图 */
+    /* 流程图 */
     .flow-diagram {
-      background: linear-gradient(135deg, #f7f9fc 0%, #f0f4fe 100%);
-      border-radius: 20px;
+      background: var(--color-surface);
+      border-radius: var(--radius-card);
       padding: 28px 24px;
-      border: 1px solid rgba(79, 127, 255, 0.08);
+      border: 1px solid var(--color-border);
       margin: 20px 0 12px;
       display: flex;
       flex-wrap: wrap;
       align-items: center;
       justify-content: center;
       gap: 6px 2px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+      box-shadow: var(--shadow-card);
     }
 
     .flow-node {
-      background: #ffffff;
+      background: var(--color-bg);
       padding: 10px 20px;
-      border-radius: 60px;
+      border-radius: var(--radius-pill);
       font-weight: 500;
       font-size: 0.9rem;
-      color: #1a2634;
-      border: 1px solid #dce3eb;
+      color: var(--color-text-primary);
+      border: 1px solid var(--color-border);
       white-space: nowrap;
-      transition: all 0.2s ease;
+      transition: all 0.2s;
     }
 
     .flow-node.primary {
-      background: linear-gradient(135deg, #1a2634, #2c3e50);
+      background: linear-gradient(135deg, var(--color-gradient-start), var(--color-gradient-end));
       color: white;
-      border-color: #1a2634;
-      box-shadow: 0 2px 8px rgba(26, 38, 52, 0.10);
+      border-color: transparent;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
     }
 
     .flow-node.highlight {
-      background: #e8eff9;
+      background: #eef4ff;
       border-color: #b8cce0;
-      border-width: 1.5px;
-    }
-
-    .flow-node:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
     }
 
     .flow-arrow {
@@ -445,18 +370,17 @@
     }
 
     .flow-badge {
-      background: linear-gradient(135deg, #eef2f6, #e8eff9);
+      background: var(--color-border);
       padding: 4px 16px;
-      border-radius: 40px;
+      border-radius: var(--radius-pill);
       font-size: 0.7rem;
       font-weight: 600;
-      color: #2c3e50;
+      color: var(--color-text-secondary);
       letter-spacing: 0.3px;
       margin-left: 8px;
-      border: 1px solid rgba(79, 127, 255, 0.08);
     }
 
-    /* 智能体卡片 (精简列表) */
+    /* 智能体列表 */
     .agent-list {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -465,81 +389,91 @@
     }
 
     .agent-item {
-      background: linear-gradient(135deg, #f7f9fc, #f0f4fe);
-      border: 1px solid #eef2f6;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
       border-radius: 16px;
-      padding: 18px 16px;
+      padding: 20px 16px;
       text-align: center;
-      transition: all 0.25s ease;
+      transition: all 0.2s;
+      box-shadow: var(--shadow-card);
     }
 
     .agent-item:hover {
       transform: translateY(-2px);
-      border-color: rgba(79, 127, 255, 0.15);
-      box-shadow: 0 4px 16px rgba(79, 127, 255, 0.06);
+      box-shadow: var(--shadow-hover);
+      border-color: var(--color-accent-blue);
     }
 
     .agent-item .name {
       font-weight: 600;
       display: block;
       font-size: 1rem;
-      color: #1a2634;
+      margin-bottom: 4px;
     }
 
     .agent-item .desc {
       font-size: 0.85rem;
-      color: #5b6f82;
+      color: var(--color-text-muted);
     }
 
-    /* 版本演进时间线 */
+    /* 时间线 */
     .timeline {
       display: flex;
       flex-wrap: wrap;
       justify-content: space-between;
       gap: 12px;
-      background: linear-gradient(135deg, #f7f9fc 0%, #f0f4fe 100%);
-      border-radius: 20px;
-      padding: 28px 24px;
-      border: 1px solid rgba(79, 127, 255, 0.08);
+      background: var(--color-surface);
+      border-radius: var(--radius-card);
+      padding: 32px 24px;
+      border: 1px solid var(--color-border);
       margin: 20px 0 8px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+      box-shadow: var(--shadow-card);
     }
 
     .timeline-item {
       flex: 1 1 100px;
       text-align: center;
-      border-right: 1px dashed #dce3eb;
+      border-right: 1px dashed var(--color-border);
       padding: 0 12px;
-      transition: all 0.2s ease;
+      position: relative;
     }
 
     .timeline-item:last-child {
       border-right: none;
     }
 
-    .timeline-item:hover {
-      transform: translateY(-2px);
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      top: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 12px;
+      height: 12px;
+      background: linear-gradient(135deg, var(--color-gradient-start), var(--color-gradient-end));
+      border-radius: 50%;
+      opacity: 0.6;
+    }
+
+    .timeline-item:last-child::before {
+      opacity: 1;
     }
 
     .version-tag {
       font-weight: 700;
       font-size: 1.1rem;
-      color: #1a2634;
-      background: linear-gradient(135deg, #1a2634, #4f7fff);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      color: var(--color-text-primary);
     }
 
     .version-label {
       font-size: 0.8rem;
-      color: #5b6f82;
+      color: var(--color-text-muted);
       display: block;
     }
 
     .version-desc {
       font-size: 0.75rem;
-      color: #4f7fff;
+      color: var(--color-accent-indigo);
       font-weight: 500;
       display: block;
       margin-top: 4px;
@@ -547,14 +481,14 @@
 
     /* 页脚 */
     .footer {
-      padding: 40px 0 32px;
-      border-top: 1px solid #eef2f6;
+      padding: 48px 0 32px;
+      border-top: 1px solid var(--color-border);
       display: flex;
       flex-wrap: wrap;
       justify-content: space-between;
       gap: 24px;
       font-size: 0.9rem;
-      color: #5b6f82;
+      color: var(--color-text-muted);
     }
 
     .footer-links {
@@ -564,43 +498,18 @@
     }
 
     .footer-links a {
-      color: #1a2634;
+      color: var(--color-text-primary);
       font-weight: 500;
-      position: relative;
-    }
-
-    .footer-links a::after {
-      content: '';
-      position: absolute;
-      width: 0;
-      height: 2px;
-      bottom: -4px;
-      left: 0;
-      background: linear-gradient(90deg, #4f7fff, #7c6cf0);
-      transition: width 0.2s ease;
-    }
-
-    .footer-links a:hover::after {
-      width: 100%;
     }
 
     .footer-links a:hover {
-      color: #1a2634;
+      color: var(--color-accent-blue);
     }
 
     .footer-contact {
       display: flex;
       gap: 24px;
       flex-wrap: wrap;
-    }
-
-    .footer-contact a {
-      color: #4f7fff;
-      font-weight: 500;
-    }
-
-    .footer-contact a:hover {
-      color: #2c5fd4;
     }
 
     /* 响应式 */
@@ -610,8 +519,7 @@
       }
 
       .grid-2col,
-      .grid-3col,
-      .grid-4col {
+      .grid-3col {
         grid-template-columns: 1fr;
       }
 
@@ -634,9 +542,16 @@
 
       .timeline-item {
         border-right: none;
-        border-bottom: 1px dashed #dce3eb;
+        border-bottom: 1px dashed var(--color-border);
         padding-bottom: 12px;
         text-align: left;
+        padding-left: 20px;
+      }
+
+      .timeline-item::before {
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
       }
 
       .timeline-item:last-child {
@@ -661,6 +576,11 @@
         flex-direction: column;
         align-items: flex-start;
       }
+
+      .hero {
+        padding: 40px 20px;
+        border-radius: 20px;
+      }
     }
 
     @media (max-width: 480px) {
@@ -668,8 +588,8 @@
         padding: 0 16px;
       }
 
-      .hero {
-        padding: 32px 0;
+      .hero h1 {
+        font-size: 2rem;
       }
 
       .hero-actions {
@@ -695,10 +615,14 @@
     <nav class="navbar">
       <div class="logo">NeoClip <span>· 智能剪辑</span></div>
       <div class="nav-links">
-        <a href="https://pengline.cn/2026/07/e068fda2aa864f30b40f62051c9467a8/">架构</a>
-        <a href="https://pengline.cn/2026/07/85b0516473b64abf9d51535014a63f8c/">演进</a>
-        <a href="https://pengline.cn/2026/07/a2a4fe64d6a9484982f0b7384f3861e8/">文档</a>
-        <a href="https://github.com/neopen/video-clip-agent" class="btn-outline">GitHub</a>
+        <a href="https://pengline.cn/2026/07/e068fda2aa864f30b40f62051c9467a8/" target="_blank"
+          rel="noopener noreferrer">架构</a>
+        <a href="https://pengline.cn/2026/07/85b0516473b64abf9d51535014a63f8c/" target="_blank"
+          rel="noopener noreferrer">演进</a>
+        <a href="https://pengline.cn/2026/07/a2a4fe64d6a9484982f0b7384f3861e8/" target="_blank"
+          rel="noopener noreferrer">文档</a>
+        <a href="https://github.com/neopen/video-clip-agent" class="btn-outline" target="_blank"
+          rel="noopener noreferrer">GitHub</a>
       </div>
     </nav>
 
@@ -711,8 +635,10 @@
         上传素材，描述想法。NeoClip 自动理解意图、分析内容、提取片段、编排合成，<br>让你专注于创意本身。
       </p>
       <div class="hero-actions">
-        <a href="https://github.com/neopen/video-clip-agent" class="btn-primary">GitHub 仓库</a>
-        <a href="https://pengline.cn/2026/07/a2a4fe64d6a9484982f0b7384f3861e8/" class="btn-secondary">阅读文档</a>
+        <a href="https://github.com/neopen/video-clip-agent" target="_blank" rel="noopener noreferrer"
+          class="btn-primary">GitHub 仓库</a>
+        <a href="https://pengline.cn/2026/07/a2a4fe64d6a9484982f0b7384f3861e8/" target="_blank"
+          rel="noopener noreferrer" class="btn-secondary">阅读文档</a>
       </div>
     </section>
 
@@ -802,7 +728,7 @@
       </div>
 
       <div
-        style="margin-top: 16px; font-size: 0.95rem; color: #3a4e62; background: linear-gradient(135deg, #f7f9fc, #f0f4fe); padding: 16px 24px; border-radius: 16px; border: 1px solid rgba(79, 127, 255, 0.08);">
+        style="margin-top: 20px; font-size: 0.95rem; color: var(--color-text-secondary); background: var(--color-surface); padding: 18px 24px; border-radius: var(--radius-card); border: 1px solid var(--color-border); box-shadow: var(--shadow-card);">
         <strong>人机协同审核：</strong> 规划、匹配、合成各阶段可中断、修改、确认，用户始终掌控。
       </div>
     </section>
@@ -842,9 +768,9 @@
         </div>
       </div>
 
-      <p class="text-small" style="margin-top: 16px;">
-        详细了解版本规划：<a href="https://pengline.cn/2026/07/85b0516473b64abf9d51535014a63f8c/"
-          style="color: #4f7fff; font-weight: 500;">NeoClip 版本演进文档 →</a>
+      <p class="text-small" style="margin-top: 20px;">
+        详细了解版本规划：<a href="https://pengline.cn/2026/07/85b0516473b64abf9d51535014a63f8c/" target="_blank"
+          rel="noopener noreferrer" style="color: var(--color-accent-blue); font-weight: 500;">NeoClip 版本演进文档 →</a>
       </p>
     </section>
 
@@ -885,26 +811,30 @@
     <!-- 页脚 -->
     <footer class="footer">
       <div>
-        <strong style="font-weight:600; color:#1a2634;">NeoClip</strong> · 智能视频剪辑系统
-        <div style="margin-top: 8px; display: flex; flex-wrap: wrap; gap: 8px;">
+        <strong style="font-weight:600; color: var(--color-text-primary);">NeoClip</strong> · 智能视频剪辑系统
+        <div style="margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px;">
           <span
-            style="background: linear-gradient(135deg, #eef2f6, #e8eff9); padding: 2px 14px; border-radius: 40px; font-size: 0.75rem; font-weight: 500; color: #2c3e50; border: 1px solid rgba(79, 127, 255, 0.06);">LangGraph</span>
+            style="background: var(--color-surface); padding: 2px 14px; border-radius: var(--radius-pill); font-size: 0.75rem; font-weight: 500; color: var(--color-text-secondary); border: 1px solid var(--color-border);">LangGraph</span>
           <span
-            style="background: linear-gradient(135deg, #eef2f6, #e8eff9); padding: 2px 14px; border-radius: 40px; font-size: 0.75rem; font-weight: 500; color: #2c3e50; border: 1px solid rgba(79, 127, 255, 0.06);">星型中枢</span>
+            style="background: var(--color-surface); padding: 2px 14px; border-radius: var(--radius-pill); font-size: 0.75rem; font-weight: 500; color: var(--color-text-secondary); border: 1px solid var(--color-border);">星型中枢</span>
           <span
-            style="background: linear-gradient(135deg, #eef2f6, #e8eff9); padding: 2px 14px; border-radius: 40px; font-size: 0.75rem; font-weight: 500; color: #2c3e50; border: 1px solid rgba(79, 127, 255, 0.06);">人机协同</span>
+            style="background: var(--color-surface); padding: 2px 14px; border-radius: var(--radius-pill); font-size: 0.75rem; font-weight: 500; color: var(--color-text-secondary); border: 1px solid var(--color-border);">人机协同</span>
           <span
-            style="background: linear-gradient(135deg, #eef2f6, #e8eff9); padding: 2px 14px; border-radius: 40px; font-size: 0.75rem; font-weight: 500; color: #2c3e50; border: 1px solid rgba(79, 127, 255, 0.06);">插件化</span>
+            style="background: var(--color-surface); padding: 2px 14px; border-radius: var(--radius-pill); font-size: 0.75rem; font-weight: 500; color: var(--color-text-secondary); border: 1px solid var(--color-border);">插件化</span>
         </div>
       </div>
       <div class="footer-links">
-        <a href="https://github.com/neopen/video-clip-agent">GitHub</a>
-        <a href="https://pengline.cn/2026/07/e068fda2aa864f30b40f62051c9467a8/">架构</a>
-        <a href="https://pengline.cn/2026/07/85b0516473b64abf9d51535014a63f8c/">演进</a>
-        <a href="https://pengline.cn/2026/07/a2a4fe64d6a9484982f0b7384f3861e8/">文档</a>
+        <a href="https://github.com/neopen/video-clip-agent" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <a href="https://pengline.cn/2026/07/e068fda2aa864f30b40f62051c9467a8/" target="_blank"
+          rel="noopener noreferrer">架构</a>
+        <a href="https://pengline.cn/2026/07/85b0516473b64abf9d51535014a63f8c/" target="_blank"
+          rel="noopener noreferrer">演进</a>
+        <a href="https://pengline.cn/2026/07/a2a4fe64d6a9484982f0b7384f3861e8/" target="_blank"
+          rel="noopener noreferrer">文档</a>
       </div>
       <div class="footer-contact">
-        <span>邮箱：<a href="mailto:helpenx@gmail.com">helpenx@gmail.com</a></span>
+        <span>邮箱：<a href="mailto:helpenx@gmail.com"
+            style="color: var(--color-accent-blue);">helpenx@gmail.com</a></span>
       </div>
     </footer>
 
