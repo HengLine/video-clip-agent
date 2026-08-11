@@ -12,8 +12,8 @@ from typing import Dict, List, Tuple, Optional, Any
 import cv2
 import numpy as np
 
-from neopen.logger import debug, warning, error
-from utils.ffmpeg_run_utils import get_video_duration
+from neoclip.logger import debug, warning, error
+from neoclip.utils.ffmpeg_run_utils import get_video_duration
 
 # 预定义的基本情绪类别
 BASIC_EMOTIONS = {

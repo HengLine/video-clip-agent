@@ -13,16 +13,13 @@ from typing import Optional, List, Dict, Any
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field, field_validator
 
-from penshot.logger import info, error, log_with_context
-from penshot.neopen.agent.base_models import VideoStyle
-from penshot.neopen.shot_config import ShotConfig
-from penshot.neopen.shot_context import script_id_ctx
-from penshot.neopen.shot_language import set_language, ShotLanguage
-from penshot.neopen.task.task_init import get_task_factory
-from penshot.neopen.task.task_models import (
-    ProcessingStatus, TaskStatus, TaskResponse, TaskStage
+from neoclip.logger import info, error, log_with_context
+from neoclip.api.function_calls import (
+    VideoStyle, ShotConfig, ShotLanguage, set_language,
+    TaskStatus, TaskResponse, ProcessingStatus, TaskStage,
+    get_task_factory, script_id_ctx,
 )
-from penshot.utils.log_utils import print_log_exception
+from neoclip.utils.log_utils import print_log_exception
 
 
 # ============================================================================
@@ -126,7 +123,7 @@ class BatchProcessRequest(BaseModel):
 # 初始化组件
 # ============================================================================
 
-router = APIRouter(prefix="/api/v1", tags=["Penshot"])
+router = APIRouter(prefix="/api/v1", tags=["NeoClip"])
 
 
 # ============================================================================
@@ -818,7 +815,7 @@ def health_check():
 
     return {
         "status": "healthy",
-        "service": "penshot",
+        "service": "neoclip",
         "stats": stats,
         "queue": queue_status
     }

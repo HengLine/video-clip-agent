@@ -8,9 +8,9 @@
 
 from typing import Dict, Any, Optional, Callable
 
-from neopen.client.base_client import BaseAIClient
-from neopen.client.openai_compat import OpenAICompatibleWrapper, BaseOpenAIResponse
-from neopen.logger import debug, error
+from neoclip.client.base_client import BaseAIClient
+from neoclip.client.openai_compat import OpenAICompatibleWrapper, BaseOpenAIResponse
+from neoclip.logger import debug, error
 
 
 class QwenClient(BaseAIClient):

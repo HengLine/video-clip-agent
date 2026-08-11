@@ -8,10 +8,19 @@ import json
 import time
 from typing import Dict, Any, Optional
 
-from config.config import get_settings_config
-from neopen.prompt.prompt import get_generate_video_prompt, get_user_requirement_prompt
-from neopen.client.client_factory import get_ai_client, convert_response
-from neopen.logger import debug, error
+from neoclip.config.config import get_settings_config
+from neoclip.client.client_factory import get_ai_client, convert_response
+from neoclip.logger import debug, error
+
+
+def get_generate_video_prompt(user_requirement):
+    """生成视频配置的提示词（v0.1 stub）"""
+    return [{"role": "user", "content": user_requirement}]
+
+
+def get_user_requirement_prompt(user_input):
+    """分析用户需求的提示词（v0.1 stub）"""
+    return [{"role": "user", "content": user_input}]
 
 
 class AIClient:

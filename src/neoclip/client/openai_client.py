@@ -8,9 +8,9 @@ from typing import Dict, Optional, Any, Callable
 import httpx
 
 from openai import OpenAI
-from neopen.logger import debug, info, error
-from neopen.client.base_client import BaseAIClient
-from neopen.client.openai_compat import OpenAICompatibleWrapper, BaseOpenAIResponse
+from neoclip.logger import debug, info, error
+from neoclip.client.base_client import BaseAIClient
+from neoclip.client.openai_compat import OpenAICompatibleWrapper, BaseOpenAIResponse
 
 
 class OpenAIClient(BaseAIClient):

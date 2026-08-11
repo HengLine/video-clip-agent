@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 from typing import List, Optional, Dict
 
-from penshot.logger import warning, debug, info, error
+from neoclip.logger import warning, debug, info, error
 try:
     from importlib.resources import files as res_files
     IMPORTLIB_AVAILABLE = True
@@ -19,7 +19,7 @@ except ImportError:
 class DotEnvLoader:
     """智能 .env 文件加载器"""
 
-    def __init__(self, package_name: str = "penshot"):
+    def __init__(self, package_name: str = "neoclip"):
         self.package_name = package_name
         self.loaded_paths: List[Path] = []
         self._dotenv_available = self._check_dotenv()
@@ -40,8 +40,8 @@ class DotEnvLoader:
         优先级（从高到低）：
         1. 当前工作目录：./ .env
         2. 父级目录：../ .env, ../../ .env (新增，最多两级)
-        3. 用户配置目录：~/.config/penshot/.env
-        4. 包安装目录：site-packages/penshot/.env
+        3. 用户配置目录：~/.config/neoclip/.env
+        4. 包安装目录：site-packages/neoclip/.env
         5. 开发模式项目根目录：(基于 _find_dev_dotenv)
 
         :return: 所有存在的 .env 文件绝对路径列表 (已去重)
@@ -247,12 +247,12 @@ def load_dotenv(override: bool = False) -> Dict[str, str]:
     加载 .env 文件（全局函数）
 
     使用示例:
-        from penshot.config import load_dotenv
+        from neoclip.utils.dotenv_loader import load_dotenv
         load_dotenv()  # 自动查找并加载
     """
     global _dotenv_loader
     if _dotenv_loader is None:
-        _dotenv_loader = DotEnvLoader("penshot")
+        _dotenv_loader = DotEnvLoader("neoclip")
 
     return _dotenv_loader.load(override=override)
 
@@ -261,7 +261,7 @@ def get_dotenv_loader() -> DotEnvLoader:
     """获取 .env 加载器实例"""
     global _dotenv_loader
     if _dotenv_loader is None:
-        _dotenv_loader = DotEnvLoader("penshot")
+        _dotenv_loader = DotEnvLoader("neoclip")
     return _dotenv_loader
 
 

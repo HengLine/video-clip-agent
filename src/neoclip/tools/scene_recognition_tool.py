@@ -9,7 +9,7 @@ import os
 import cv2
 import numpy as np
 from typing import List, Tuple, Dict, Any, Optional
-from neopen.logger import debug, info, warning, error
+from neoclip.logger import debug, info, warning, error
 
 class SceneRecognitionTool:
     """

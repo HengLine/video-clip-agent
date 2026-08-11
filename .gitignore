@@ -1,52 +1,61 @@
-target/
-.idea/
-logs/
-outputs/
-uploads/
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+dist/
+build/
+eggs/
+*.egg
+
+# Virtual environments
 .venv/
+.claude/
+venv/
 env/
 .env/
-/data
-venv/
-temp/
-.git/
-.svn/
 .env
-bin/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
 .settings/
-__pycache__/
 .classpath
 .factorypath
 .project
+
+# OS
 .DS_Store
-db.json
-*.log
-*.iml
-*.git
-mvnw
-mvnw.cmd
-
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
+Thumbs.db
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
-*.sw?
+
+# Logs
+logs/
+*.log
+
+# Data directories
+data/
+outputs/
+uploads/
+temp/
+
+# Sensitive files
+db.json
+*.local
+
+# Java (from template)
+.svn/
+bin/
+*.iml
+mvnw
+mvnw.cmd
+
+# Node
+node_modules/
+dist/
+dist-ssr/

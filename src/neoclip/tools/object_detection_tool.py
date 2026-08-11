@@ -11,8 +11,8 @@ from typing import List, Dict, Tuple
 import cv2
 import numpy as np
 
-from config.config import get_model_dir
-from neopen.logger import debug, info, warning, error
+from neoclip.config.config import get_model_dir
+from neoclip.logger import debug, info, warning, error
 
 # 预定义的常见物体类别
 COMMON_OBJECTS = {

@@ -5,14 +5,14 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "neoclip"
 version = "0.1.0"
-description = "AI-powered video clipping agent with emotion analysis, scene recognition, and intelligent editing"
+description = "AI-powered video mix clipping agent — star hub architecture with multi-agent collaboration"
 readme = "README.md"
 authors = [
-    {name = "Your Name", email = "your.email@example.com"}
+    {name = "HiPeng", email = "helpenx@gmail.com"}
 ]
 license = {text = "MIT"}
 requires-python = ">=3.9"
-keywords = ["video", "clip", "ai", "langgraph", "flask", "ffmpeg", "emotion-analysis"]
+keywords = ["video", "clip", "ai", "fastapi", "ffmpeg", "agent", "langgraph"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -26,33 +26,24 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 
-# 核心依赖（从 requirements.txt 转换）
+# 核心依赖（仅包含 v0.1 实际使用的包）
 dependencies = [
-    # AI与语言处理
-    "langchain==0.3.27",
-    "langgraph==0.6.10",
-    "transformers>=4.30.0",
-    "torch>=2.0.0",
+    # Web 框架
+    "fastapi>=0.100.0",
+    "uvicorn>=0.20.0",
 
-    # Web框架
-    "flask>=2.0.0",
-    "flask-cors>=3.0.10",
-    "werkzeug>=2.3.0",
-
-    # OpenAI API 客户端
+    # AI / LLM
     "openai>=1.0.0",
+    "langgraph>=1.0",
+    "langgraph-checkpoint>=2.0",
     "httpx>=0.24.0",
 
-    # 视频处理相关库
-    "moviepy>=1.0.3",
+    # 视频处理
     "opencv-python>=4.8.0",
-    "ffmpeg-python>=0.2.0",
     "pydub>=0.25.0",
 
     # 语音识别
     "speechrecognition>=3.14.0",
-    "librosa>=0.10.0",
-    "pipwin>=0.5.1",
 
     # 数据分析与科学计算
     "numpy>=1.23.0,<2.3.0",
@@ -66,12 +57,18 @@ dependencies = [
     # 环境变量管理
     "python-dotenv>=1.0.0",
 
-    # YAML配置文件处理
+    # YAML 配置文件处理
     "pyyaml>=6.0",
 
-    # 其他依赖
+    # HTTP 客户端
     "requests>=2.25.0,<3.0.0",
+    "aiohttp>=3.8.0",
     "urllib3>=1.25.4,<2.1",
+
+    # 任务队列
+    "redis>=4.0.0",
+
+    # 进度显示
     "tqdm>=4.60.0",
 ]
 
@@ -119,11 +116,9 @@ Documentation = "https://clip.pengline.cn"
 Issues = "https://github.com/neopen/video-clip-agent/issues"
 Changelog = "https://github.com/neopen/video-clip-agent/blob/main/CHANGELOG.md"
 
-# 命令行入口点
+# 命令行入口点（v0.1 使用 main.py 直接启动）
 [project.scripts]
-neoclip = "neoclip.app.app_flask:main"
-neoclip-server = "neoclip.app.app_flask:run_server"
-neoclip-config = "neoclip.config.config:cli"
+neoclip = "neoclip.app.setup_env:main"
 
 # 包查找配置
 [tool.setuptools.packages.find]
@@ -135,13 +130,6 @@ exclude = ["tests*", "examples*", "docs*"]
 [tool.setuptools.package-data]
 neoclip = [
     "config/*.json",
-    "data/*.json",
-    "neopen/prompt/*.yaml",
-    "neopen/prompt/*.yml",
-    "flask/templates/*.html",
-    "flask/static/**/*",
-    "resources/fonts/*.ttf",
-    "resources/icons/*.png",
 ]
 
 # Black 代码格式化配置
@@ -241,9 +229,6 @@ exclude_lines = [
 zip-safe = false
 include-package-data = true
 
-# 可选：配置 PyPI 的 long description 内容类型
-[tool.setuptools.dynamic]
-version = {attr = "neoclip.__version__"}
 
 # 预提交钩子配置（可选，但推荐）
 [tool.pre-commit]

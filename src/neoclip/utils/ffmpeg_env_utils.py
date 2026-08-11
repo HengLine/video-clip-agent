@@ -7,7 +7,7 @@
 import os
 import subprocess
 
-from neopen.logger import debug, error
+from neoclip.logger import debug, error
 
 
 def find_ffmpeg() -> str:

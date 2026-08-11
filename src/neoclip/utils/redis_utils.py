@@ -11,7 +11,7 @@ from typing import Optional, Any
 
 import redis
 
-from penshot.logger import info, error, debug
+from neoclip.logger import info, error, debug
 
 
 class RedisClient:

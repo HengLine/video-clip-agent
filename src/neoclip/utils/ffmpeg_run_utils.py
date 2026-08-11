@@ -11,8 +11,8 @@ import subprocess
 import uuid
 from typing import Dict, Any
 
-from neopen.logger import error, debug, warning
-from utils.log_utils import print_log_exception
+from neoclip.logger import error, debug, warning
+from neoclip.utils.log_utils import print_log_exception
 
 
 def get_video_duration(video_path, ffmpeg_path: str = "ffprobe", default_duration: float = 3) -> float:
@@ -456,7 +456,7 @@ def merge_videos(merge_list_file, output_path: str, ffmpeg_path: str = "ffmpeg",
         # 如果有部分视频没有音频，为这些视频添加背景音乐
         if has_any_audio and not all_have_audio:
             debug("检测到混合音频流，为无音频视频添加背景音乐...")
-            from utils.background_audio_utils import process_video_audio_with_background
+            from neoclip.utils.background_audio_utils import process_video_audio_with_background
             
             try:
                 # 创建临时目录处理音频

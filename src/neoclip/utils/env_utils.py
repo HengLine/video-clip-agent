@@ -7,7 +7,7 @@
 """
 import os
 
-from penshot.logger import error
+from neoclip.logger import error
 
 
 def print_large_ascii():

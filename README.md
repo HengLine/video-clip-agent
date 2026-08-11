@@ -1,110 +1,133 @@
-# 视频混剪智能体
+# NeoClip — 视频混剪智能体
 
-一个基于智能体协作的视频混剪处理系统，能够根据用户的需求自动分析视频内容、编辑视频片段并输出最终结果。
+基于星型中枢分发架构的 AI 视频混剪系统，通过智能体协作实现自然语言驱动的视频分析、片段匹配与自动合成。
 
-## 系统架构
+## 架构概览
 
-系统采用智能体协作架构，包含四个核心智能体：
+NeoClip 采用**星型中枢分发模式**作为顶层架构，**线性链路节点模式**作为中枢可调度的标准工作流：
 
-1. **需求分析智能体 (RequirementAnalyzerAgent)** - 负责解析用户需求，为视频内容分析做输入和准备
-2. **内容分析智能体 (ContentAnalyzerAgent)** - 分析视频内容，生成剪切点
-   1. **语音文字识别** : 将视频中的语音转换为文字，便于内容理解
-   2. **物品场景检测** : 识别视频中的物体、场景和活动
-   3. **情绪分析** : 分析视频内容的情感色彩，辅助剪辑决策
-3. **视频编辑智能体 (VideoEditorAgent)** - 根据剪切点和用户需求进行视频编辑
-4. **质量验证智能体 (QualityValidatorAgent)** - 验证最终视频的质量和符合度
+> 用户输入 → 指令解析中枢 → 意图识别 → 路由分发 → 智能体执行 → 状态更新 → 用户反馈
 
-智能体之间通过有向无环图(DAG)进行协作，确保处理流程的清晰和高效。
+**核心设计理念**：人机协同 — 系统规划、用户确认、增量迭代，AI 辅助而非替代创作者。
+
+**当前版本**：V0.1（星型骨架 MVP）
 
 ## 快速开始
 
 ### 环境要求
 
 - Python 3.9+
-- 足够的磁盘空间用于存储视频文件
-- 安装FFmpeg（用于视频处理）
+- FFmpeg（配置环境变量）
+- 足够的磁盘空间存储视频文件
 
-### 安装步骤
+### 安装
 
-1. 安装Git、Python 和 FFmpeg（配置环境变量）
-
-2. 克隆项目到本地
-
-   ```sql
-   git clone https://github.com/neopen/video-clip-agent.git
-   ```
-
-3. 配置环境、安装依赖包：
-
-   ```sh
-   >> cd video-clip-agent
-   
-   >> python -m venv .venv
-   >> .\venv\Scripts\activate.bat
-   
-   >> pip install -r requirements.txt
-   ```
-3. 配置LLM
-
-   复制 .env.example 为 .env。并修改其中LLM内容
-
-   ```ini
-   # AI 提供商选择，可选值: openai, qwen, deepseek, ollama
-   AI_PROVIDER=qwen
-   
-   # 文心一言配置
-   QWEN_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxx
-   QWEN_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
-   ```
-
-4. 启动服务：
-
-   ```sh
-   >> python start_app.py
-   ```
-
-服务将在 http://localhost:8000 运行
-
-### 处理视频 API
-
-**端点**: `/api/process-video`
-**方法**: POST
-**请求格式**:
-- `query`: 用户的查询描述
-- `files[]`: 要上传的视频文件
-
-**示例请求**:
 ```bash
-curl -X POST -F "query=提取所有猫的片段并按时间顺序排列" -F "files[]=@/path/to/video1.mp4" -F "files[]=@/path/to/video2.mp4" http://localhost:8000/api/process-video
+git clone https://github.com/neopen/video-clip-agent.git
+cd video-clip-agent
+
+# 创建虚拟环境
+python -m venv .venv
+# Windows
+.\venv\Scripts\activate.bat
+# Linux/Mac
+source .venv/bin/activate
+
+# 安装依赖
+pip install -r requirements.txt
 ```
 
-**响应格式**:
+### 配置 LLM
+
+复制 `.env.example` 为 `.env`，修改 AI 提供商配置：
+
+```ini
+# AI 提供商: openai, qwen, deepseek, ollama
+AI_PROVIDER=qwen
+
+# Qwen 配置
+QWEN_API_KEY=sk-xxxxxxxxxxxxxxxxxxxxxxxxxxx
+QWEN_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+```
+
+### 启动服务
+
+```bash
+python main.py
+```
+
+服务运行在 http://localhost:8000，API 文档在 http://localhost:8000/docs。
+
+## API 接口
+
+### 健康检查
+
+```bash
+curl http://localhost:8000/health
+```
+
 ```json
-{
-  "status": "success",
-  "message": "视频处理成功",
-  "video_url": "/api/video/generated_video.mp4",
-  "report": {
-    "validation_results": {...},
-    "total_clips": 5,
-    "editing_actions": 10,
-    "passed": true
-  }
-}
+{"status": "healthy"}
 ```
 
-## 效果展示
+### 视频处理
 
-输入示例
+**端点**: `/api/v1/storyboard`
+**方法**: POST
 
-<img src="./source/image/%E8%BE%93%E5%85%A5%E7%A4%BA%E4%BE%8B.PNG" alt="输入示例" style="zoom:57%;" />
+```bash
+curl -X POST http://localhost:8000/api/v1/storyboard \
+  -H "Content-Type: application/json" \
+  -d '{"script": "将视频中笑的部分剪成欢快的集锦", "language": "zh"}'
+```
 
-输出结果：
+### 任务状态查询
 
-<img src="./source/image/%E8%BE%93%E5%87%BA%E7%BB%93%E6%9E%9C.PNG" alt="输出结果" style="zoom:67%;" />
+```bash
+curl http://localhost:8000/api/v1/status/{task_id}
+```
 
-## 注意事项
 
-1. 上传的视频文件大小建议不超过200MB
-2. 处理大文件可能需要较长时间，请耐心等待
-3. 系统会自动清理15天前的日志文件，但不会自动清理上传和输出的视频文件
+
+## 版本路线
+
+| 版本 | 代号     | 目标             |
+| :--- | :------- | :--------------- |
+| V0.1 | 星型骨架 | 验证技术闭环     |
+| V0.2 | 语义理解 | LLM + 向量匹配   |
+| V0.3 | 可视化   | Web UI + 协作    |
+| V1.0 | 生产就绪 | 企业级服务       |
+| V2.0 | 生态开放 | 插件市场         |
+
+## 技术栈
+
+- **语言**: Python 3.9+
+- **Web**: FastAPI + uvicorn
+- **AI**: OpenAI / Qwen / DeepSeek / Ollama
+- **视频**: FFmpeg, OpenCV, PyDub
+- **数据**: NumPy, Pandas, Scikit-learn
+- **代码质量**: ruff, black, mypy, pre-commit
+
+## 开发
+
+```bash
+# 安装开发依赖
+pip install -e ".[dev]"
+
+# 代码检查
+ruff check src/ tests/
+black --check src/ tests/
+mypy src/neoclip
+
+# 运行测试
+pytest
+```
+
+## 文档
+
+- [技术架构](docs/视频混剪智能体-技术架构.md)
+- [版本演进](docs/视频混剪智能体-版本演进.md)
+
+## License
+
+MIT

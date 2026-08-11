@@ -12,8 +12,8 @@ from typing import List, Dict, Any, Optional, Tuple
 
 from pydub import AudioSegment
 import speech_recognition as sr
-from neopen.logger import info, debug, warning, error
-from utils.ffmpeg_run_utils import has_audio_info, get_audio_from_video
+from neoclip.logger import info, debug, warning, error
+from neoclip.utils.ffmpeg_run_utils import has_audio_info, get_audio_from_video
 
 
 class SpeechRecognizer:

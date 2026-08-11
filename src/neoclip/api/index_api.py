@@ -9,9 +9,9 @@
 import uvicorn
 from fastapi import APIRouter
 
-from penshot.logger import info, error
+from neoclip.logger import info, error
 
-router = APIRouter(tags=["Penshot"])
+router = APIRouter(tags=["NeoClip"])
 
 @router.get("/")
 def read_root():
@@ -19,7 +19,7 @@ def read_root():
     根路径，提供API信息
     """
     return {
-        "message": "剧本分镜智能体服务",
+        "message": "NeoClip 视频混剪智能体服务",
         "version": "1.0.0",
         "docs": "/docs",
         "redoc": "/redoc"
@@ -51,7 +51,7 @@ if __name__ == "__main__":
         info("正在启动FastAPI服务器...")
         info("访问 http://127.0.0.1:8000/docs 查看API文档")
         uvicorn.run(
-            "penshot.neopen.app_fast:app",
+            "neoclip.app:app",
             host="127.0.0.1",
             port=8000,
             reload=True  # 开发环境启用自动重载

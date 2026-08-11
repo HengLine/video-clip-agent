@@ -12,19 +12,44 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 import traceback
 
-
-#
-# 导入模型API路由器
 from neoclip.api.index_api import router as index_router
 from neoclip.api.rest_api import router as rest_router
 from neoclip.config.config import settings
-from neoclip.logger import error
-from neoclip.neopen.shot_context import RequestContextMiddleware
+from neoclip.logger import error, info
+from neoclip.utils.path_utils import PathResolver
 from .proxy import router as proxy_router
-from ..neopen.task.task_init import startup_with_recovery
-from ..utils.path_utils import PathResolver
+
+
+# ============================================================================
+# V0.1 stubs — 后续版本实现完整逻辑
+# ============================================================================
+
+class RequestContextMiddleware(BaseHTTPMiddleware):
+    """请求上下文中间件（v0.1 空实现）"""
+    async def dispatch(self, request: Request, call_next):
+        return await call_next(request)
+
+
+async def startup_with_recovery():
+    """编译 LangGraph 图 + 注册 Agent"""
+    from neoclip.graph.hub_graph import get_graph
+    from neoclip.hub.hub_core import get_hub
+    from neoclip.agents.planner_agent import get_planner_agent
+
+    info("Compiling LangGraph StateGraph...")
+    graph = get_graph()
+    info(f"Graph compiled: {type(graph).__name__}")
+
+    info("Registering planner agent...")
+    hub = get_hub()
+    planner = get_planner_agent()
+    hub.register_agent(planner)
+
+    capabilities = hub.registry.list_all()
+    info(f"Hub initialized with {len(capabilities)} capability record(s)")
 
 
 async def app_startup():
@@ -54,8 +79,8 @@ async def lifespan(app: FastAPI):
 
 # 创建FastAPI应用
 app = FastAPI(
-    title="剧本分镜智能体服务",
-    description="一个能够将剧本智能拆分为短视频脚本单元的API服务",
+    title="NeoClip 视频混剪智能体",
+    description="AI-powered video mix clipping agent service",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",

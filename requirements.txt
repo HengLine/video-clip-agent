@@ -1,0 +1,44 @@
+# NeoClip v0.1 Runtime Dependencies
+# Generated from pyproject.toml — only packages actually imported in source
+
+# Web Framework
+fastapi>=0.100.0
+uvicorn>=0.20.0
+starlette>=0.30.0
+
+# HTTP Client
+httpx>=0.24.0
+requests>=2.25.0,<3.0.0
+aiohttp>=3.8.0
+
+# AI / LLM
+openai>=1.0.0
+langgraph>=1.0
+langgraph-checkpoint>=2.0
+
+# Video Processing
+opencv-python>=4.8.0
+pydub>=0.25.0
+numpy>=1.23.0,<2.3.0
+
+# Speech Recognition
+SpeechRecognition>=3.14.0
+
+# Data & Science
+pandas>=2.0.0
+scikit-learn>=1.3.0
+
+# Logging & Output
+python-json-logger>=2.0.0
+colorama>=0.4.6
+tqdm>=4.60.0
+
+# Configuration
+python-dotenv>=1.0.0
+PyYAML>=6.0
+
+# Task Queue (optional, for multi-worker mode)
+redis>=4.0.0
+
+# HTTP
+urllib3>=1.25.4,<2.1

@@ -13,13 +13,13 @@ from typing import Any, Dict, Optional
 
 from openai import OpenAI
 
-from config.config import get_settings_config
-from neopen.client.deepseek_client import DeepSeekClient
-from neopen.client.ollama_client import OllamaClient
+from neoclip.config.config import get_settings_config
+from neoclip.client.deepseek_client import DeepSeekClient
+from neoclip.client.ollama_client import OllamaClient
 # 导入各个厂商的客户端实现
-from neopen.client.openai_client import OpenAIClient
-from neopen.client.qwen_client import QwenClient
-from neopen.logger import error, debug
+from neoclip.client.openai_client import OpenAIClient
+from neoclip.client.qwen_client import QwenClient
+from neoclip.logger import error, debug
 
 
 class AIClientFactory:

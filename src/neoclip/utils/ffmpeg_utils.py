@@ -10,12 +10,12 @@ import os
 import subprocess
 import uuid
 
-from config.config import get_video_rendering_config
-from neopen.logger import debug, error, warning, info
-from utils.ffmpeg_env_utils import find_ffmpeg, check_xfade_support
-from utils.ffmpeg_run_utils import get_video_duration, merge_videos, transcode_merge_video, codec_video, \
+from neoclip.config.config import get_video_rendering_config
+from neoclip.logger import debug, error, warning, info
+from neoclip.utils.ffmpeg_env_utils import find_ffmpeg, check_xfade_support
+from neoclip.utils.ffmpeg_run_utils import get_video_duration, merge_videos, transcode_merge_video, codec_video, \
     scale_video, apply_xfade_transition, apply_basic_transition
-from utils.log_utils import print_log_exception
+from neoclip.utils.log_utils import print_log_exception
 
 
 class FFmpegUtils:

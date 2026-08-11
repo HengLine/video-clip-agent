@@ -10,7 +10,7 @@ from typing import Any
 from pathlib import Path
 import importlib.resources as resources
 
-from penshot.utils.obj_utils import dict_to_obj
+from neoclip.utils.obj_utils import dict_to_obj
 
 
 def load_from_json(json_path: str) -> str:
@@ -35,7 +35,7 @@ def save_to_json(cls: Any, file_name):
 # =============== 资源文件路径获取 ===============
 def get_file_path(package, file_name) -> Path:
     """获取配置文件路径"""
-    with resources.path(f"penshot.{package}", file_name) as path:
+    with resources.path(f"neoclip.{package}", file_name) as path:
         return Path(path)
 
 def get_subdir_path(subdir: str, filename: str) -> Path:
@@ -55,7 +55,7 @@ def get_subdir_path(subdir: str, filename: str) -> Path:
     else:
         resource_path = filename
 
-    with resources.path("penshot", resource_path) as path:
+    with resources.path("neoclip", resource_path) as path:
         return Path(path)
 
 

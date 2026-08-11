@@ -10,7 +10,7 @@ import json
 from typing import Dict, Any
 from dotenv import load_dotenv
 
-from neopen.logger import debug, info, error
+from neoclip.logger import debug, info, error
 
 # 加载.env文件中的环境变量
 load_dotenv()
@@ -263,3 +263,40 @@ def get_verify_report_dir() -> str:
     # 确保目录存在
     os.makedirs(verify_dir, exist_ok=True)
     return verify_dir
+
+
+# ============================================================================
+# Settings 对象 — v0.1 统一配置入口
+# ============================================================================
+
+class _ApiConfig:
+    """API 服务器配置代理对象"""
+    def __init__(self, cfg: Dict[str, Any]):
+        self.host = cfg.get("host", "0.0.0.0")
+        self.port = cfg.get("port", 8000)
+        self.reload = cfg.get("reload", False)
+        self.workers = cfg.get("workers", 1)
+
+
+class Settings:
+    """统一配置入口，包裹 get_settings_config() 返回的 dict"""
+
+    def __init__(self):
+        self._config = get_settings_config()
+
+    @property
+    def api(self) -> _ApiConfig:
+        """API 服务器配置，映射 config.json 的 flask 键"""
+        return _ApiConfig(self._config.get("flask", {}))
+
+    def get_data_paths(self) -> Dict[str, str]:
+        """返回应用数据目录路径"""
+        return {
+            "data_output": self._config.get("video_processing", {}).get("output_dir", "data/output"),
+            "data_memory": "data/memory",
+            "data_embedding": "data/embedding",
+            "data_model": "data/templates",
+        }
+
+
+settings = Settings()

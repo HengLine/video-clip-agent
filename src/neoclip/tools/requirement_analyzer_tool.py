@@ -6,9 +6,9 @@
 """
 from typing import Dict, Any
 
-from config.config import get_settings_config
-from neopen.client.ai_client import global_ai_client
-from neopen.logger import info, error
+from neoclip.config.config import get_settings_config
+from neoclip.client.ai_client import global_ai_client
+from neoclip.logger import info, error
 
 
 class RequirementAnalyzer:

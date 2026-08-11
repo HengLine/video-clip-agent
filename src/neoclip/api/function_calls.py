@@ -8,18 +8,330 @@
 
 import asyncio
 import threading
-from dataclasses import dataclass
+import uuid
+from contextvars import ContextVar
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from enum import Enum
 from typing import Dict, Optional, List, Any, Callable
 
-from penshot.logger import info, error
-from penshot.neopen.agent.base_models import VideoStyle
-from penshot.neopen.shot_config import ShotConfig
-from penshot.neopen.shot_language import ShotLanguage, set_language
-from penshot.neopen.task.task_factory import (
-    create_task_factory, TaskFactory, TaskResponse, TaskPriority, DEFAULT_TASK_TTL_SECONDS,
-)
-from penshot.neopen.task.task_models import TaskStatus
-from penshot.utils.log_utils import print_log_exception
+from neoclip.logger import info, error
+from neoclip.utils.log_utils import print_log_exception
+from neoclip.state.models import IntentType
+
+# ============================================================================
+# V0.1 类型 stub — 后续版本实现完整逻辑
+# ============================================================================
+
+
+class VideoStyle(str, Enum):
+    REALISTIC = "realistic"
+    ANIME = "anime"
+    CARTOON = "cartoon"
+    CINEMATIC = "cinematic"
+
+
+class ShotLanguage(str, Enum):
+    ZH = "zh"
+    EN = "en"
+
+
+class TaskStatus(str, Enum):
+    PENDING = "pending"
+    PROCESSING = "processing"
+    SUCCESS = "success"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+    TIMEOUT = "timeout"
+    NOT_FOUND = "not_found"
+    UNKNOWN = "unknown"
+
+    def is_completed(self) -> bool:
+        return self in (TaskStatus.SUCCESS, TaskStatus.FAILED, TaskStatus.CANCELLED, TaskStatus.TIMEOUT)
+
+
+class TaskPriority(str, Enum):
+    NORMAL = "normal"
+    HIGH = "high"
+    LOW = "low"
+
+
+DEFAULT_TASK_TTL_SECONDS = 3600
+
+script_id_ctx: ContextVar = ContextVar("script_id", default=None)
+
+
+def set_language(lang):
+    pass
+
+
+@dataclass
+class ShotConfig:
+    pass
+
+
+@dataclass
+class TaskResponse:
+    task_id: str = ""
+    success: bool = False
+    status: TaskStatus = TaskStatus.UNKNOWN
+    data: Optional[Dict[str, Any]] = None
+    error: Optional[str] = None
+    processing_time_ms: Optional[int] = None
+    created_at: Any = None
+    completed_at: Any = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {"task_id": self.task_id, "success": self.success, "status": self.status.value}
+
+
+@dataclass
+class ProcessingStatus:
+    task_id: str = ""
+    status: TaskStatus = TaskStatus.UNKNOWN
+    stage: str = ""
+    progress: int = 0
+    created_at: Any = None
+    updated_at: Any = None
+    error_message: Optional[str] = None
+    current_stage: Optional[str] = None
+    stage_name: Optional[str] = None
+    stages_progress: Optional[Dict] = None
+
+
+@dataclass
+class TaskStage:
+    code: str = ""
+    name: str = ""
+
+    @classmethod
+    def from_code(cls, code: str):
+        return cls(code=code, name=code)
+
+
+@dataclass
+class BatchResponse:
+    batch_id: str = ""
+    total_tasks: int = 0
+    task_ids: list = field(default_factory=list)
+    created_at: Any = None
+
+
+class TaskFactory:
+    """任务工厂 — 委托 TaskLifecycleManager + CentralHub"""
+
+    def __init__(self):
+        from neoclip.api.task_backend import TaskLifecycleManager, get_task_lifecycle_manager
+        from neoclip.hub.hub_core import get_hub
+        self.task_manager = get_task_lifecycle_manager()
+        self._hub = get_hub()
+        self._max_concurrent = 10
+
+    def submit(self, **kwargs):
+        script = kwargs.get("script", "")
+        script_id = kwargs.get("script_id")
+        language = kwargs.get("language", "zh")
+        callback = kwargs.get("callback")
+
+        session_id = script_id or str(uuid.uuid4())
+        intent_type = IntentType.PLAN_CREATE.value
+
+        sid, task_id = self.task_manager.submit(
+            script=script,
+            script_id=script_id,
+            session_id=session_id,
+            intent_type=intent_type,
+            metadata={"language": str(language) if hasattr(language, 'value') else language},
+        )
+
+        # 通过 Hub 处理
+        hub_result = self._hub.process(user_input=script, session_id=session_id)
+        self.task_manager.store.update(task_id, hub_result=hub_result)
+
+        # V0.1: 如果有 callback，立即以 success 回调
+        if callback:
+            try:
+                tr = TaskResponse(task_id=task_id, success=True, status=TaskStatus.SUCCESS,
+                                  created_at=datetime.now(timezone.utc), completed_at=datetime.now(timezone.utc))
+                callback(tr)
+            except Exception as e:
+                error(f"TaskFactory callback error: {e}")
+
+        return (sid, task_id)
+
+    def get_status(self, task_id):
+        raw = self.task_manager.get_status(task_id)
+        if raw is None:
+            return None
+        return ProcessingStatus(
+            task_id=raw["task_id"],
+            status=TaskStatus(raw.get("status", "unknown")),
+            stage=raw.get("stage", ""),
+            progress=raw.get("progress", 0),
+            created_at=raw.get("created_at"),
+            updated_at=raw.get("updated_at"),
+            error_message=None,
+        )
+
+    def get_result(self, task_id):
+        raw = self.task_manager.get_result(task_id)
+        if raw is None:
+            return None
+        status_str = raw.get("status", "unknown")
+        try:
+            status = TaskStatus(status_str)
+        except ValueError:
+            status = TaskStatus.UNKNOWN
+        return TaskResponse(
+            task_id=raw["task_id"],
+            success=raw.get("success", False),
+            status=status,
+            data=raw.get("data"),
+            error=raw.get("error"),
+            processing_time_ms=raw.get("processing_time_ms"),
+            created_at=raw.get("created_at"),
+            completed_at=raw.get("completed_at"),
+        )
+
+    def cancel(self, task_id):
+        return self.task_manager.cancel(task_id)
+
+    def wait_for_result(self, task_id, timeout):
+        import time
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            result = self.get_result(task_id)
+            if result and result.status.is_completed():
+                return result
+            time.sleep(0.5)
+        return self.get_result(task_id)
+
+    async def wait_for_result_async(self, task_id, timeout, poll_interval=0.5):
+        import asyncio
+        deadline = asyncio.get_event_loop().time() + timeout
+        while asyncio.get_event_loop().time() < deadline:
+            result = self.get_result(task_id)
+            if result and result.status.is_completed():
+                return result
+            await asyncio.sleep(poll_interval)
+        return self.get_result(task_id)
+
+    def batch(self, **kwargs):
+        scripts = kwargs.get("scripts", [])
+        config = kwargs.get("config")
+        language = kwargs.get("language", "zh")
+        timeout = kwargs.get("timeout", 600)
+
+        batch_result = self.task_manager.batch_submit(
+            scripts=scripts, config=config, language=language
+        )
+        results = []
+        import time
+        deadline = time.time() + timeout
+        for tid in batch_result["task_ids"]:
+            while time.time() < deadline:
+                r = self.get_result(tid)
+                if r and r.status.is_completed():
+                    results.append(r)
+                    break
+                time.sleep(0.5)
+            else:
+                results.append(self.get_result(tid))
+        return results
+
+    async def batch_async(self, **kwargs):
+        import asyncio
+        scripts = kwargs.get("scripts", [])
+        config = kwargs.get("config")
+        language = kwargs.get("language", "zh")
+        max_concurrent = kwargs.get("max_concurrent", 3)
+
+        batch_result = self.task_manager.batch_submit(
+            scripts=scripts, config=config, language=language
+        )
+        results = []
+        for tid in batch_result["task_ids"]:
+            r = await self.wait_for_result_async(tid, timeout=600)
+            results.append(r)
+        return results
+
+    def batch_submit(self, **kwargs):
+        scripts = kwargs.get("scripts", [])
+        config = kwargs.get("config")
+        language = kwargs.get("language", "zh")
+        result = self.task_manager.batch_submit(scripts=scripts, config=config, language=language)
+        return BatchResponse(
+            batch_id=result["batch_id"],
+            total_tasks=result["total_tasks"],
+            task_ids=result["task_ids"],
+            created_at=result["created_at"],
+        )
+
+    def batch_get_status(self, batch_id):
+        statuses = self.task_manager.batch_get_status(batch_id)
+        return [
+            ProcessingStatus(
+                task_id=s.get("task_id", ""),
+                status=TaskStatus(s.get("status", "unknown")),
+                stage=s.get("stage", ""),
+                progress=s.get("progress", 0),
+                created_at=s.get("created_at"),
+                updated_at=s.get("updated_at"),
+            )
+            for s in statuses
+        ]
+
+    def batch_get_results(self, batch_id):
+        return self.task_manager.batch_get_results(batch_id)
+
+    def get_queue_status(self):
+        return self.task_manager.get_queue_status()
+
+    def get_stats(self):
+        return self.task_manager.get_stats()
+
+    def set_max_concurrent(self, n):
+        self._max_concurrent = n
+        info(f"TaskFactory max_concurrent set to {n}")
+
+    def recover_pending_tasks(self, **kwargs):
+        max_age = kwargs.get("max_age_hours", 2)
+        return self.task_manager.recover_pending_tasks(max_age_hours=max_age)
+
+    def get_pending_tasks(self, **kwargs):
+        max_age = kwargs.get("max_age_hours", 2)
+        return self.task_manager.get_pending_tasks(max_age_hours=max_age)
+
+    async def shutdown(self, wait_for_completion=True, timeout=30):
+        info("TaskFactory shutdown")
+        return True
+
+    def submit_and_wait(self, **kwargs):
+        script = kwargs.get("script", "")
+        script_id = kwargs.get("script_id")
+        language = kwargs.get("language", "zh")
+        timeout = kwargs.get("timeout", 300)
+
+        sid, task_id = self.submit(
+            script=script,
+            script_id=script_id,
+            language=language,
+        )
+        return self.wait_for_result(task_id, timeout)
+
+
+_factory = None
+
+
+def create_task_factory(**kwargs) -> TaskFactory:
+    return TaskFactory()
+
+
+def get_task_factory() -> TaskFactory:
+    global _factory
+    if _factory is None:
+        _factory = TaskFactory()
+    return _factory
 
 
 @dataclass

@@ -9,8 +9,8 @@
 import os
 from typing import Dict, Any, Optional
 
-from neopen.logger import debug, warning, error
-from utils.ffmpeg_run_utils import get_video_metadata
+from neoclip.logger import debug, warning, error
+from neoclip.utils.ffmpeg_run_utils import get_video_metadata
 
 # 视频元数据读取器的默认配置
 DEFAULT_CONFIG = {
