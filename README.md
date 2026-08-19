@@ -25,6 +25,7 @@ NeoClip 采用 **DDD 分层架构**，顶层为**星型中枢分发模式**（`C
 
 ## 核心特性
 
+- **交互式控制台（REPL）**：实时人机协同——澄清式对话、渐进式细化、高风险操作确认中断
 - **星型中枢分发**：命令解析 → 意图识别（30+ 意图枚举）→ 风险评估 → 能力路由
 - **能力注册机制**：新增功能继承 `BaseAgent` 并声明能力，无需修改中枢代码
 - **多 AI 提供商**：OpenAI / 通义千问 Qwen / DeepSeek / Ollama（本地模型）
@@ -92,30 +93,40 @@ python main.py --host 0.0.0.0 --port 8000   # 生产（多进程需 Redis）
 
 服务启动后，交互式 API 文档位于 http://localhost:8000/docs。
 
+### 启动交互控制台（主要使用方式）
+
+NeoClip 以**控制台实时交互**为主要使用方式（REST 异步仅为备用）：
+
+```bash
+# 交互式控制台（需先 pip install -e .）
+neoclip-cli                       # 自动生成会话
+neoclip-cli --session my-vlog     # 指定会话 ID
+
+# 或模块方式（开发环境）
+python -m neoclip.cli.main
+```
+
+控制台支持三种交互模式（一次性指令 / 澄清式对话 / 渐进式细化）与高风险操作确认中断。示例：
+
+```
+neoclip> 做一个旅行 Vlog，风景放开头，美食放中间
+确认根据此需求创建新的时间线规划？
+确认执行? [y/N] y
+[OK] Created timeline with 3 slot(s)
+
+neoclip> 最终渲染
+确认开始最终渲染？渲染开始后中途取消可能导致不完整输出。
+确认执行? [y/N] y
+[OK] Video rendered to data/output/output.mp4
+
+neoclip> exit
+```
+
+> 完整用法见 [控制台使用指南](docs/视频混剪智能体-控制台使用指南.md)。
+
 ## API 接口
 
 ### 已上线端点
-
-核心业务（`rest_api.py`，前缀 `/api/v1`）：
-
-| 方法 | 路径 | 说明 |
-| :-- | :-- | :-- |
-| POST | `/api/v1/storyboard` | 分镜生成（异步） |
-| POST | `/api/v1/storyboard/sync` | 分镜生成（同步） |
-| POST | `/api/v1/storyboard/batch` | 批量分镜（异步，≤50） |
-| POST | `/api/v1/storyboard/batch/sync` | 批量分镜（同步，≤20） |
-| GET | `/api/v1/status/{task_id}` | 任务状态 |
-| GET | `/api/v1/result/{task_id}` | 任务结果 |
-| DELETE | `/api/v1/task/{task_id}` | 取消任务 |
-| GET | `/api/v1/tasks` | 任务列表 |
-| GET | `/api/v1/queue/status` | 队列状态 |
-| GET | `/api/v1/stats` | 处理统计 |
-| GET | `/api/v1/pending-tasks` | 未完成任务 |
-| POST | `/api/v1/recover-tasks` | 手动任务恢复 |
-| GET | `/api/v1/batch/status/{batch_id}` | 批量状态 |
-| GET | `/api/v1/batch/result/{batch_id}` | 批量结果 |
-| GET | `/api/v1/config` | 默认配置 |
-| GET | `/api/v1/languages` | 支持的语言 |
 
 系统（`index_api.py`）：
 
@@ -123,7 +134,30 @@ python main.py --host 0.0.0.0 --port 8000   # 生产（多进程需 Redis）
 | :-- | :-- | :-- |
 | GET | `/` | 服务信息 |
 | GET | `/health` | 健康检查 |
-| GET | `/config/styles` | 支持的视频风格 |
+
+领域路由（`api/v1/`，前缀 `/api/v1`）：
+
+| 方法 | 路径 | 说明 |
+| :-- | :-- | :-- |
+| POST | `/api/v1/tasks` | 提交自然语言指令（异步，返回 task_id） |
+| GET | `/api/v1/tasks/{task_id}` | 查询任务状态 |
+| GET | `/api/v1/tasks/{task_id}/result` | 获取任务结果 |
+| DELETE | `/api/v1/tasks/{task_id}` | 取消任务 |
+| POST | `/api/v1/sessions` | 创建会话 |
+| GET | `/api/v1/sessions/{session_id}` | 查询会话 |
+| DELETE | `/api/v1/sessions/{session_id}` | 删除会话 |
+| POST | `/api/v1/assets` | 上传/注册素材 |
+| GET | `/api/v1/assets/{asset_id}` | 查询素材 |
+| GET | `/api/v1/assets/{asset_id}/metadata` | 素材元数据 |
+| POST | `/api/v1/assets/{asset_id}/analyze` | 分析素材 |
+| POST | `/api/v1/timelines` | 创建时间线 |
+| GET | `/api/v1/timelines/{timeline_id}` | 查询时间线 |
+| PUT | `/api/v1/timelines/{timeline_id}/slots/{slot_id}` | 更新槽位 |
+| POST | `/api/v1/exports/render` | 发起渲染导出 |
+| GET | `/api/v1/exports/{task_id}/status` | 渲染状态 |
+| GET | `/api/v1/exports/{task_id}/download` | 下载结果 |
+| POST | `/api/v1/webhooks` | 注册 Webhook |
+| DELETE | `/api/v1/webhooks/{webhook_id}` | 删除 Webhook |
 
 ### 使用示例
 
@@ -131,16 +165,18 @@ python main.py --host 0.0.0.0 --port 8000   # 生产（多进程需 Redis）
 # 健康检查
 curl http://localhost:8000/health
 
-# 分镜生成（异步）
-curl -X POST http://localhost:8000/api/v1/storyboard \
+# 提交自然语言指令（异步）
+curl -X POST http://localhost:8000/api/v1/tasks \
   -H "Content-Type: application/json" \
-  -d '{"script": "将视频中笑的部分剪成欢快的集锦", "language": "zh"}'
+  -d '{"user_input": "将视频中笑的部分剪成欢快的集锦", "language": "zh"}'
+# → {"task_id": "...", "session_id": "...", "status": "pending"}
 
-# 查询任务状态
-curl http://localhost:8000/api/v1/status/{task_id}
+# 查询任务状态 / 结果
+curl http://localhost:8000/api/v1/tasks/{task_id}
+curl http://localhost:8000/api/v1/tasks/{task_id}/result
 ```
 
-> 新增的 `api/v1/` 领域路由（`session`/`asset`/`timeline`/`export`/`webhook`）已定义但**尚未挂载**到应用（`application.py` 未 include 该 router），当前返回占位 stub。
+> 交互式 API 文档：http://localhost:8000/docs。REST 异步为**备用方案**，主要交互方式请使用[交互控制台](docs/视频混剪智能体-控制台使用指南.md)。
 
 ## 目录结构
 
@@ -195,7 +231,7 @@ ruff check --fix src/ tests/
 # 类型检查
 mypy src/neoclip
 
-# 运行测试（当前 tests/ 为空，V0.2 待补充）
+# 运行测试
 pytest
 
 # Git 钩子（提交前自动检查）
@@ -206,6 +242,9 @@ pre-commit install
 
 | 文档 | 说明 |
 | :-- | :-- |
+| [控制台使用指南](docs/视频混剪智能体-控制台使用指南.md) | 交互式控制台（REPL）完整用法 |
+| [快速开始](docs/视频混剪智能体-快速开始.md) | 从零到跑通的图文指南 |
+| [项目总结](docs/视频混剪智能体-项目总结.md) | 项目设计理念与核心契约 |
 | [设计原则](docs/视频混剪智能体-设计原则.md) | 目标架构与设计模式 |
 | [技术架构](docs/视频混剪智能体-技术架构.md) | 系统总体架构、人机协同、数据契约 |
 | [版本演进](docs/视频混剪智能体-版本演进.md) | 版本规划与路线 |

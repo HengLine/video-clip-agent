@@ -88,8 +88,9 @@ dev = [
 ]
 
 # GPU 支持（可选，替代 torch 的 CPU 版本）
+# GPU 版 torch 需从 PyTorch 官方源安装：pip install torch --index-url https://download.pytorch.org/whl/cu118
 gpu = [
-    "torch>=2.0.0 --index-url https://download.pytorch.org/whl/cu118",
+    "torch>=2.0.0",
 ]
 
 # 文档生成
@@ -121,6 +122,7 @@ Changelog = "https://github.com/neopen/video-clip-agent/blob/main/CHANGELOG.md"
 # 命令行入口点（v0.1 使用 main.py 直接启动）
 [project.scripts]
 neoclip = "neoclip.app.setup_env:main"
+neoclip-cli = "neoclip.cli.main:main"
 
 # 包查找配置
 [tool.setuptools.packages.find]
