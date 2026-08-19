@@ -2,10 +2,10 @@
 
 from fastapi import APIRouter
 
-router = APIRouter(prefix="/asset", tags=["asset"])
+router = APIRouter(prefix="/assets", tags=["asset"])
 
 
-@router.post("/upload")
+@router.post("")
 async def upload_asset():
     return {"status": "ok", "message": "Asset uploaded (stub)"}
 

@@ -2,10 +2,10 @@
 
 from fastapi import APIRouter
 
-router = APIRouter(prefix="/session", tags=["session"])
+router = APIRouter(prefix="/sessions", tags=["session"])
 
 
-@router.post("/")
+@router.post("")
 async def create_session():
     return {"status": "ok", "message": "Session created (stub)"}
 

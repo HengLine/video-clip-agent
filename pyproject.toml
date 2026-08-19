@@ -67,6 +67,8 @@ dependencies = [
 
     # 任务队列
     "redis>=4.0.0",
+    # 自研异步任务池（本地 editable 安装，或 github.com/neopen/neotask）
+    "neotask>=1.0.0",
 
     # 进度显示
     "tqdm>=4.60.0",

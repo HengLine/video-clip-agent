@@ -37,8 +37,10 @@ tqdm>=4.60.0
 python-dotenv>=1.0.0
 PyYAML>=6.0
 
-# Task Queue (optional, for multi-worker mode)
+# Task Queue
 redis>=4.0.0
+# 自研异步任务池（neotask，本地开发可先：pip install -e ../task-schedule-manager）
+neotask>=1.0.0
 
 # HTTP
 urllib3>=1.25.4,<2.1

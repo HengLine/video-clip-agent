@@ -2,10 +2,10 @@
 
 from fastapi import APIRouter
 
-router = APIRouter(prefix="/webhook", tags=["webhook"])
+router = APIRouter(prefix="/webhooks", tags=["webhook"])
 
 
-@router.post("/register")
+@router.post("")
 async def register_webhook():
     return {"status": "ok", "message": "Webhook registered (stub)"}
 

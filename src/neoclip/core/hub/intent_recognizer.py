@@ -64,7 +64,7 @@ class IntentRecognizer:
         return {"raw_text": text}
 
     def needs_clarification(self, text: str) -> bool:
-        return len(text.strip()) < 4
+        return len(text.strip()) < 2
 
     def generate_clarification(self, text: str) -> str:
         return f"请详细描述您的需求，例如'把自我介绍放开头，活动放中间，风景放结尾'"

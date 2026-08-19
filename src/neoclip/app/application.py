@@ -2,7 +2,7 @@
 @FileName: application.py
 @Description: 应用程序主模块 - 负责初始化和配置整个应用
 @Author: HiPeng
-@Github: https://github.com/neopen/story-shot-agent
+@Github: https://github.com/neopen/video-clip-agent
 @Time: 2025/10/6
 """
 import os
@@ -16,11 +16,10 @@ from starlette.middleware.base import BaseHTTPMiddleware
 import traceback
 
 from neoclip.api.index_api import router as index_router
-from neoclip.api.rest_api import router as rest_router
+from neoclip.api.v1.routes import router as v1_router
 from neoclip.config.config import settings
 from neoclip.logger import error, info
 from neoclip.utils.path_utils import PathResolver
-from .proxy import router as proxy_router
 
 
 # ============================================================================
@@ -150,6 +149,5 @@ async def general_exception_handler(request: Request, exc: Exception):
     )
 
 # =====================router======================
-app.include_router(proxy_router)
-app.include_router(rest_router)
 app.include_router(index_router)
+app.include_router(v1_router)

@@ -3,12 +3,14 @@
 from neoclip.core.hub.central_hub import HubResponse
 
 
-def render_response(response: HubResponse):
+def render_response(response: HubResponse, print_fn=print):
     status = "OK" if response.success else "FAIL"
-    print(f"[{status}] {response.message}")
+    print_fn(f"[{status}] {response.message}")
     if response.intent:
-        print(f"  Intent: {response.intent.value}")
+        print_fn(f"  Intent: {response.intent.value}")
     if response.needs_confirmation:
-        print(f"  ⚠ {response.confirmation_message}")
+        print_fn(f"  ⚠ {response.confirmation_message}")
+    if response.needs_clarification:
+        print_fn(f"  ? {response.clarification}")
     if response.data:
-        print(f"  Data: {response.data}")
+        print_fn(f"  Data: {response.data}")

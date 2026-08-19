@@ -38,6 +38,10 @@ Thumbs.db
 logs/
 *.log
 
+# Test / coverage artifacts
+.coverage
+htmlcov/
+
 # Data directories
 data/
 outputs/

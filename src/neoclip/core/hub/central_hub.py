@@ -4,14 +4,13 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 from neoclip.core.hub.capability_registry import CapabilityRegistry
-from neoclip.core.hub.intent_recognizer import IntentRecognizer, IntentResult
+from neoclip.core.hub.intent_recognizer import IntentRecognizer
 from neoclip.core.hub.risk_assessor import RiskAssessor
 from neoclip.core.hub.context_manager import ContextManager
 from neoclip.core.state.state_manager import get_state_manager
 from neoclip.core.event.event_bus import get_event_bus
 from neoclip.core.event.event_types import Event, EventType
 from neoclip.domain.value_objects.intent import IntentType
-from neoclip.domain.value_objects.risk import RiskLevel
 from neoclip.domain.value_objects.execution_result import ExecutionResult
 from neoclip.logger import info, warning
 
@@ -31,6 +30,17 @@ class HubResponse:
     data: Optional[Dict[str, Any]] = None
     needs_confirmation: bool = False
     confirmation_message: str = ""
+    needs_clarification: bool = False
+    clarification: str = ""
+
+
+@dataclass
+class PendingOperation:
+    session_id: str
+    intent: IntentType
+    params: Dict[str, Any]
+    capability: Any
+    agent: Any
 
 
 class CentralHub:
@@ -42,11 +52,12 @@ class CentralHub:
         self.state_manager = get_state_manager()
         self.event_bus = get_event_bus()
         self._agents: Dict[str, Any] = {}
+        self._pending: Dict[str, PendingOperation] = {}
         info("CentralHub initialized")
 
     def process(self, user_input: str, session_id: Optional[str] = None) -> HubResponse:
         session_id = session_id or f"sess_{id(self)}"
-        ctx = self.context_manager.get_context(session_id)
+        self.context_manager.get_context(session_id)
 
         # 1. Intent recognition
         intent_result = self.intent_recognizer.recognize(user_input)
@@ -62,11 +73,20 @@ class CentralHub:
             "intent": intent_result.intent.value,
         })
 
-        # 3. Risk assessment
+        # 3. Clarification check (单字符输入 或 未匹配到关键词)
+        if self.intent_recognizer.needs_clarification(user_input) or intent_result.confidence < 1.0:
+            return HubResponse(
+                success=False,
+                intent=intent_result.intent,
+                needs_clarification=True,
+                clarification=self.intent_recognizer.generate_clarification(user_input),
+            )
+
+        # 4. Risk assessment
         risk = self.risk_assessor.assess(intent_result.intent)
         needs_confirmation = self.risk_assessor.needs_confirmation(risk)
 
-        # 4. Route to capability
+        # 5. Route to capability
         capabilities = self.registry.find_by_intent(intent_result.intent)
         if not capabilities:
             return HubResponse(
@@ -74,24 +94,58 @@ class CentralHub:
                 intent=intent_result.intent,
                 message=f"No capability registered for intent: {intent_result.intent.value}",
             )
-
-        # 5. Execute first matching capability
         cap = capabilities[0]
         agent = self._agents.get(cap.agent_id) if cap.agent_id else None
-        if agent:
-            result = agent.execute(intent_result.params, {"session_id": session_id})
-        else:
-            result = ExecutionResult(success=True, message=f"Capability '{cap.name}' executed (no agent attached)")
 
-        # 6. Build response
+        # 6. High-risk gate: wait for confirmation before executing
+        if needs_confirmation:
+            self._pending[session_id] = PendingOperation(
+                session_id=session_id,
+                intent=intent_result.intent,
+                params=intent_result.params,
+                capability=cap,
+                agent=agent,
+            )
+            return HubResponse(
+                success=True,
+                intent=intent_result.intent,
+                message="等待确认",
+                needs_confirmation=True,
+                confirmation_message=self.risk_assessor.generate_confirmation_message(intent_result.intent),
+            )
+
+        # 7. Execute capability
+        result = self._execute(agent, cap, intent_result.params, session_id)
+
         return HubResponse(
             success=result.success,
             intent=intent_result.intent,
             message=result.message,
             data=result.data,
-            needs_confirmation=needs_confirmation,
-            confirmation_message=self.risk_assessor.generate_confirmation_message(intent_result.intent) if needs_confirmation else "",
         )
+
+    def _execute(self, agent: Any, cap: Any, params: Dict[str, Any], session_id: str) -> ExecutionResult:
+        if agent:
+            return agent.execute(params, {"session_id": session_id})
+        return ExecutionResult(success=True, message=f"Capability '{cap.name}' executed (no agent attached)")
+
+    def confirm(self, session_id: str) -> HubResponse:
+        pending = self._pending.pop(session_id, None)
+        if pending is None:
+            return HubResponse(success=False, message="没有待确认的操作")
+        result = self._execute(pending.agent, pending.capability, pending.params, pending.session_id)
+        return HubResponse(
+            success=result.success,
+            intent=pending.intent,
+            message=result.message,
+            data=result.data,
+        )
+
+    def cancel(self, session_id: str) -> HubResponse:
+        pending = self._pending.pop(session_id, None)
+        if pending is None:
+            return HubResponse(success=False, message="没有待确认的操作")
+        return HubResponse(success=True, intent=pending.intent, message=f"已取消 {pending.intent.value}")
 
     def register_agent(self, agent: Any) -> bool:
         """Register an agent and its capabilities with the hub."""
@@ -122,6 +176,11 @@ class CentralHub:
 
     def handle_interrupt(self, session_id: str, user_input: str) -> HubResponse:
         """Resume from an interrupt (e.g., user confirmation)."""
+        text = user_input.strip().lower()
+        if text in ("y", "yes", "确认", "是"):
+            return self.confirm(session_id)
+        if text in ("n", "no", "取消", "否"):
+            return self.cancel(session_id)
         return self.process(user_input, session_id=session_id)
 
 
