@@ -180,7 +180,7 @@ class LoggingConfigManager:
             "level": "INFO",
             "class": "logging.handlers.RotatingFileHandler",
             "formatter": "formatter",
-            "filename": f"logs/neoclip_{datetime.now().strftime('%Y-%m-%d')}.log",
+            "filename": f"logs/penclip_{datetime.now().strftime('%Y-%m-%d')}.log",
             "maxBytes": 10485760,  # 10MB
             "backupCount": 5,
             "encoding": "utf8"
@@ -408,7 +408,7 @@ class Logger:
         # 获取日志目录
         if log_dir is None:
             # 尝试从配置获取
-            filename = handler_config.get('filename', 'logs/neoclip_%Y-%m-%d.log')
+            filename = handler_config.get('filename', 'logs/penclip_%Y-%m-%d.log')
             log_path = Path(filename)
 
             # 如果配置中是相对路径，转换为绝对路径

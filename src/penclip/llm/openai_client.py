@@ -9,8 +9,8 @@ import httpx
 
 from openai import OpenAI
 from penclip.logger import debug, info, error
-from penclip.client.base_client import BaseAIClient
-from penclip.client.openai_compat import OpenAICompatibleWrapper, BaseOpenAIResponse
+from penclip.llm.base_client import BaseAIClient
+from penclip.llm.openai_compat import OpenAICompatibleWrapper, BaseOpenAIResponse
 from penclip.services.llm_config import register_provider
 
 

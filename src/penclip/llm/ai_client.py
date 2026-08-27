@@ -10,7 +10,7 @@ import time
 from typing import Dict, Any, Optional
 
 from penclip.config.config import get_settings_config
-from penclip.client.client_factory import get_ai_client, convert_response
+from penclip.llm.client_factory import get_ai_client, convert_response
 from penclip.logger import debug, error
 from penclip.services.llm_config import LLMProviderRegistry, resolve_provider_config
 

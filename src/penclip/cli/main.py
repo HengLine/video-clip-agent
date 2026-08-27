@@ -6,6 +6,7 @@ from uuid import uuid4
 from penclip.core.hub.central_hub import get_hub
 from penclip.cli.repl import run_repl
 from penclip.logger import info
+from penclip.utils.env_utils import print_large_ascii
 
 
 def register_default_agents(hub) -> None:
@@ -23,6 +24,7 @@ def register_default_agents(hub) -> None:
 
 
 def main():
+    print_large_ascii()
     parser = argparse.ArgumentParser(description="PenClip — 视频混剪智能体交互控制台")
     parser.add_argument("--session", "-s", type=str, help="会话 ID（不指定则自动生成）")
     args = parser.parse_args()

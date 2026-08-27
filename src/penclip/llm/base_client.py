@@ -11,7 +11,7 @@ import requests
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, Callable
 
-from penclip.client.openai_compat import OpenAICompatibleWrapper, BaseOpenAIResponse
+from penclip.llm.openai_compat import OpenAICompatibleWrapper, BaseOpenAIResponse
 from penclip.logger import info, error
 
 

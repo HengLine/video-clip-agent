@@ -5,6 +5,8 @@ from typing import Any, Callable
 from penclip.core.hub.central_hub import CentralHub
 from penclip.core.state.state_manager import StateManager, get_state_manager
 from penclip.cli.renderer import render_response
+from penclip.logger import info
+from penclip.utils.env_utils import print_large_ascii
 
 BANNER = (
     "PenClip 视频混剪智能体 — 交互控制台\n"
@@ -35,6 +37,11 @@ def run_repl(
     print_fn: Callable[..., Any] = print,
 ) -> None:
     print_fn(f"PenClip 交互控制台 — session: {session_id}")
+    print_large_ascii()
+    info("==================================================================")
+    info("<                   欢迎使用 Neopen 视频混剪智能体                 >")
+    info("<           ⭐https://github.com/neopen/video-clip-agent       >")
+    info("==================================================================")
     state_manager = get_state_manager()
     if state_manager.get_session(session_id) is None:
         state_manager.create_session(session_id)

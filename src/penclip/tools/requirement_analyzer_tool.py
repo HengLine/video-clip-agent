@@ -7,7 +7,7 @@
 from typing import Dict, Any
 
 from penclip.config.config import get_settings_config
-from penclip.client.ai_client import global_ai_client
+from penclip.llm.ai_client import global_ai_client
 from penclip.logger import info, error
 
 

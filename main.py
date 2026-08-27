@@ -108,9 +108,9 @@ class NeopenApp(AppBaseEnv):
                 try:
                     from penclip.utils.redis_utils import RedisClient
                     if RedisClient().get_client() is None:
-                        warning(f"多进程模式(workers={workers})下 Redis 不可用，任务状态将在进程间分裂，强烈建议配置 neoclip_REDIS_URL")
+                        warning(f"多进程模式(workers={workers})下 Redis 不可用，任务状态将在进程间分裂，强烈建议配置 penclip_REDIS_URL")
                 except Exception:
-                    warning(f"多进程模式(workers={workers})下 Redis 连接失败，任务状态将在进程间分裂，强烈建议配置 neoclip_REDIS_URL")
+                    warning(f"多进程模式(workers={workers})下 Redis 连接失败，任务状态将在进程间分裂，强烈建议配置 penclip_REDIS_URL")
 
                 # 多进程模式下使用传统方式（此时reload一定为False）
                 uvicorn.run(

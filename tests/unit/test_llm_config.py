@@ -10,7 +10,7 @@ from penclip.services.llm_config import (
 )
 
 # 触发 4 个供应商客户端自注册（import 副作用）
-import penclip.client.client_factory as _cf  # noqa: F401
+import penclip.llm.client_factory as _cf  # noqa: F401
 
 EXPECTED_PROVIDERS = {"openai", "qwen", "deepseek", "ollama"}
 

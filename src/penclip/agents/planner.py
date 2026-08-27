@@ -100,7 +100,7 @@ class PlannerAgent(BaseAgent):
     def _extract_slots_via_llm(self, text: str) -> Optional[List[Dict[str, Any]]]:
         """调用 LLM 解读需求并提取槽位；失败返回 None 回退关键词解析。"""
         try:
-            from penclip.client.client_factory import get_ai_client, convert_response
+            from penclip.llm.client_factory import get_ai_client, convert_response
             from penclip.services.llm_config import resolve_provider_config
 
             provider = os.environ.get("AI_PROVIDER") or "qwen"

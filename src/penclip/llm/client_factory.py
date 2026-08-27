@@ -11,10 +11,10 @@ from typing import Any, Dict, Optional
 from penclip.config.config import get_settings_config
 
 # 以下 import 仅用于触发 @register_provider 自注册副作用
-from penclip.client.deepseek_client import DeepSeekClient  # noqa: F401
-from penclip.client.ollama_client import OllamaClient  # noqa: F401
-from penclip.client.openai_client import OpenAIClient  # noqa: F401
-from penclip.client.qwen_client import QwenClient  # noqa: F401
+from penclip.llm.deepseek_client import DeepSeekClient  # noqa: F401
+from penclip.llm.ollama_client import OllamaClient  # noqa: F401
+from penclip.llm.openai_client import OpenAIClient  # noqa: F401
+from penclip.llm.qwen_client import QwenClient  # noqa: F401
 from penclip.logger import error, debug
 from penclip.services.llm_config import LLMProviderRegistry, resolve_provider_config
 
