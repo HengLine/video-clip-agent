@@ -10,6 +10,7 @@ data/
 venv/
 temp/
 uploads/
+htmlcov/
 .git/
 .svn/
 .env
@@ -24,6 +25,7 @@ db.json
 *.log
 *.iml
 *.git
+.coverage
 mvnw
 mvnw.cmd
 
@@ -51,3 +53,4 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+/.claude/settings.local.json
