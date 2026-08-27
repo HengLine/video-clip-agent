@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "AI-powered video mix clipping agent — star hub architecture with multi-agent collaboration"
 readme = "README.md"
 authors = [
-    {name = "HiPeng", email = "helpenx@gmail.com"}
+    {name = "HiPeng", email = "helpenx+clip@gmail.com"}
 ]
 license = {text = "MIT"}
 requires-python = ">=3.9"
