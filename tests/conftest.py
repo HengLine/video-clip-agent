@@ -20,7 +20,7 @@ if str(SRC) not in sys.path:
 @pytest.fixture(scope="session")
 def client():
     """共享的 TestClient，触发 lifespan 启动（注册 Agent、编译图）。"""
-    from neoclip.app.application import app
+    from penclip.app.application import app
 
     with TestClient(app) as c:
         yield c

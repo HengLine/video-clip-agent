@@ -1,4 +1,4 @@
-# NeoClip — 视频混剪智能体
+# PenClip — 视频混剪智能体
 
 基于**星型中枢分发架构**的 AI 视频混剪系统：自然语言驱动视频分析、片段匹配与自动合成。核心理念「人机协同」—— AI 辅助而非替代创作者。
 
@@ -23,18 +23,18 @@ plugins/         插件系统 + Docker 沙箱（V2.0）
 
 ## Bridge 层（向后兼容转发，勿在此改逻辑）
 顶层 `hub/`、`graph/`、`state/` 是兼容转发模块，真实实现在 `core/`、`domain/`：
-- `neoclip.hub.hub_core` → `neoclip.core.hub.central_hub`（`get_hub`/`CentralHub`/`HubRequest`/`HubResponse`）
-- `neoclip.graph.hub_graph` → `neoclip.core.orchestration.graph_engine`（`get_graph`/`LangGraphEngine`）
-- `neoclip.state.models` → `IntentType`(domain) + `TaskLifecycleStage`(core.state)
+- `penclip.hub.hub_core` → `penclip.core.hub.central_hub`（`get_hub`/`CentralHub`/`HubRequest`/`HubResponse`）
+- `penclip.graph.hub_graph` → `penclip.core.orchestration.graph_engine`（`get_graph`/`LangGraphEngine`）
+- `penclip.state.models` → `IntentType`(domain) + `TaskLifecycleStage`(core.state)
 
 ## 关键入口
 ```python
-from neoclip.hub.hub_core import get_hub           # 中枢单例
-from neoclip.graph.hub_graph import get_graph       # 图引擎（stub）
-from neoclip.state.models import IntentType, TaskLifecycleStage
-from neoclip.domain.value_objects.intent import IntentType  # 真实定义处
+from penclip.hub.hub_core import get_hub           # 中枢单例
+from penclip.graph.hub_graph import get_graph       # 图引擎（stub）
+from penclip.state.models import IntentType, TaskLifecycleStage
+from penclip.domain.value_objects.intent import IntentType  # 真实定义处
 ```
-启动：`python main.py`（→ `neoclip.app:app` FastAPI，默认 http://localhost:8000，`/docs` 交互文档）
+启动：`python main.py`（→ `penclip.app:app` FastAPI，默认 http://localhost:8000，`/docs` 交互文档）
 
 ## 核心契约（开发必读）
 - `IntentType`（str Enum）：30+ 意图，6 类 —— 规划/分析/素材/效果/状态/通用
@@ -44,10 +44,10 @@ from neoclip.domain.value_objects.intent import IntentType  # 真实定义处
 - `AssemblyState`（Pydantic）：全局会话状态（assets/slots/analysis_results/match_results/global_context/...）
 
 ## 开发约定
-- 所有 import 统一 `neoclip.*` 前缀；**禁止** `penshot.*`/`neopen.*` 旧前缀
+- 所有 import 统一 `penclip.*` 前缀；**禁止** `penshot.*`/`neopen.*` 旧前缀
 - 值对象用 `dataclass`+`enum`；实体与 API 模型用 Pydantic `BaseModel`
 - 工具函数返回 `Dict` 带 `success` 字段、不抛异常；API 层用 `HTTPException`
-- 用 `neoclip.logger` 的 `debug/info/warning/error`，禁止 `print()`
+- 用 `penclip.logger` 的 `debug/info/warning/error`，禁止 `print()`
 - 每个工具/Agent 必须有 `DEFAULT_CONFIG`；能力注册是核心扩展机制，新增能力不修改中枢代码
 
 ## 详细文档

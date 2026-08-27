@@ -5,7 +5,7 @@ def test_root_info(client):
     resp = client.get("/")
     assert resp.status_code == 200
     body = resp.json()
-    assert "NeoClip" in body["message"]
+    assert "PenClip" in body["message"]
     assert body["docs"] == "/docs"
 
 

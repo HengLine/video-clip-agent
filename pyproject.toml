@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "neoclip"
+name = "penclip"
 version = "0.1.0"
 description = "AI-powered video mix clipping agent — star hub architecture with multi-agent collaboration"
 readme = "README.md"
@@ -108,7 +108,7 @@ profiling = [
 
 # 所有依赖（开发+文档+性能）
 all = [
-    "neoclip[dev,docs,profiling]",
+    "penclip[dev,docs,profiling]",
 ]
 
 # 项目 URLs
@@ -121,18 +121,18 @@ Changelog = "https://github.com/neopen/video-clip-agent/blob/main/CHANGELOG.md"
 
 # 命令行入口点（v0.1 使用 main.py 直接启动）
 [project.scripts]
-neoclip = "neoclip.app.setup_env:main"
-neoclip-cli = "neoclip.cli.main:main"
+penclip = "penclip.app.setup_env:main"
+penclip-cli = "penclip.cli.main:main"
 
 # 包查找配置
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["neoclip*", "neoclip.*"]
+include = ["penclip*", "penclip.*"]
 exclude = ["tests*", "examples*", "docs*"]
 
 # 包数据文件
 [tool.setuptools.package-data]
-neoclip = [
+penclip = [
     "config/*.json",
 ]
 
@@ -174,7 +174,7 @@ ignore = [
 ]
 
 [tool.ruff.isort]
-known-first-party = ["neoclip"]
+known-first-party = ["penclip"]
 
 # pytest 配置
 [tool.pytest.ini_options]
@@ -188,7 +188,7 @@ addopts = [
     "--tb=short",
     "--strict-markers",
     "--strict-config",
-    "--cov=neoclip",
+    "--cov=penclip",
     "--cov-report=term-missing",
     "--cov-report=html",
 ]
@@ -213,7 +213,7 @@ warn_no_return = true
 
 # coverage.py 配置
 [tool.coverage.run]
-source = ["src/neoclip"]
+source = ["src/penclip"]
 omit = ["*/tests/*", "*/test_*", "*/__pycache__/*"]
 
 [tool.coverage.report]

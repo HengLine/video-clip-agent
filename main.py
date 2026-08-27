@@ -18,14 +18,14 @@ import signal
 import sys
 from pathlib import Path
 
-# 添加src目录到Python路径（必须在导入 neoclip 之前执行，否则未安装包时无法独立运行）
+# 添加src目录到Python路径（必须在导入 penclip 之前执行，否则未安装包时无法独立运行）
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from neoclip.app.setup_env import AppBaseEnv
-from neoclip.app import app
-from neoclip.config.config import settings
-from neoclip.logger import debug, info, warning, error, get_logging_manager
-from neoclip.utils.log_utils import print_log_exception
+from penclip.app.setup_env import AppBaseEnv
+from penclip.app import app
+from penclip.config.config import settings
+from penclip.logger import debug, info, warning, error, get_logging_manager
+from penclip.utils.log_utils import print_log_exception
 
 # 设置编码为UTF-8以确保中文显示正常
 sys.stdout.reconfigure(encoding='utf-8')
@@ -83,7 +83,7 @@ class NeopenApp(AppBaseEnv):
                     # 热重载模式：uvicorn 需通过模块导入路径加载应用，以便子进程监视文件变化
                     info("已启用热重载模式（reload=True），源码变更将自动重启服务")
                     uvicorn.run(
-                        "neoclip.app:app",
+                        "penclip.app:app",
                         host=host,
                         port=port,
                         reload=True,
@@ -106,7 +106,7 @@ class NeopenApp(AppBaseEnv):
                 # 多进程模式（workers>1）：任务队列/回调为进程内状态，任务记录需经 Redis 跨进程共享。
                 # 若 Redis 不可用，任务将在进程间分裂（提交到进程A的任务在进程B查询为 not_found）
                 try:
-                    from neoclip.utils.redis_utils import RedisClient
+                    from penclip.utils.redis_utils import RedisClient
                     if RedisClient().get_client() is None:
                         warning(f"多进程模式(workers={workers})下 Redis 不可用，任务状态将在进程间分裂，强烈建议配置 neoclip_REDIS_URL")
                 except Exception:

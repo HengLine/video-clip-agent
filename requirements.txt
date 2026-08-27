@@ -1,4 +1,4 @@
-# NeoClip v0.1 Runtime Dependencies
+# PenClip v0.1 Runtime Dependencies
 # Generated from pyproject.toml — only packages actually imported in source
 
 # Web Framework

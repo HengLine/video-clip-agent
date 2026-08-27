@@ -1,10 +1,10 @@
-# NeoClip — 视频混剪智能体
+# PenClip — 视频混剪智能体
 
 基于**星型中枢分发架构**的 AI 视频混剪系统。以自然语言驱动视频分析、片段匹配与自动合成，通过多智能体协作实现「人机协同」的创作体验—— AI 辅助而非替代创作者。
 
 ## 架构概览
 
-NeoClip 采用 **DDD 分层架构**，顶层为**星型中枢分发模式**（`CentralHub` 负责命令解析 → 意图识别 → 能力路由 → 智能体调度），首个注册的标准工作流为**线性链路节点模式**（采样 → 解析 → 分析 → 匹配 → 合成）。
+PenClip 采用 **DDD 分层架构**，顶层为**星型中枢分发模式**（`CentralHub` 负责命令解析 → 意图识别 → 能力路由 → 智能体调度），首个注册的标准工作流为**线性链路节点模式**（采样 → 解析 → 分析 → 匹配 → 合成）。
 
 ```
 用户输入 → CentralHub → [意图识别 → 风险评估 → 能力路由] → Agent 执行 → 状态更新 → 用户反馈
@@ -95,31 +95,31 @@ python main.py --host 0.0.0.0 --port 8000   # 生产（多进程需 Redis）
 
 ### 启动交互控制台（主要使用方式）
 
-NeoClip 以**控制台实时交互**为主要使用方式（REST 异步仅为备用）：
+PenClip 以**控制台实时交互**为主要使用方式（REST 异步仅为备用）：
 
 ```bash
 # 交互式控制台（需先 pip install -e .）
-neoclip-cli                       # 自动生成会话
-neoclip-cli --session my-vlog     # 指定会话 ID
+penclip-cli                       # 自动生成会话
+penclip-cli --session my-vlog     # 指定会话 ID
 
 # 或模块方式（开发环境）
-python -m neoclip.cli.main
+python -m penclip.cli.main
 ```
 
 控制台支持三种交互模式（一次性指令 / 澄清式对话 / 渐进式细化）与高风险操作确认中断。示例：
 
 ```
-neoclip> 做一个旅行 Vlog，风景放开头，美食放中间
+penclip> 做一个旅行 Vlog，风景放开头，美食放中间
 确认根据此需求创建新的时间线规划？
 确认执行? [y/N] y
 [OK] Created timeline with 3 slot(s)
 
-neoclip> 最终渲染
+penclip> 最终渲染
 确认开始最终渲染？渲染开始后中途取消可能导致不完整输出。
 确认执行? [y/N] y
 [OK] Video rendered to data/output/output.mp4
 
-neoclip> exit
+penclip> exit
 ```
 
 > 完整用法见 [控制台使用指南](docs/视频混剪智能体-控制台使用指南.md)。
@@ -183,7 +183,7 @@ curl http://localhost:8000/api/v1/tasks/{task_id}/result
 完整目录结构与模块说明见 [`.claude/skills/project.md`](.claude/skills/project.md)，简要总览：
 
 ```
-src/neoclip/
+src/penclip/
 ├── domain/          # 领域层：entities / value_objects / repositories（零依赖）
 ├── core/            # 应用层：hub / orchestration / state / event
 ├── agents/          # 智能体：BaseAgent + Planner/Analyzer/Matcher/Composer
@@ -229,7 +229,7 @@ ruff check src/ tests/
 ruff check --fix src/ tests/
 
 # 类型检查
-mypy src/neoclip
+mypy src/penclip
 
 # 运行测试
 pytest

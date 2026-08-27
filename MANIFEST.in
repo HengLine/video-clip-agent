@@ -13,10 +13,10 @@ recursive-include assets *.PNG *.png *.mp3
 recursive-include docs *.md *.rst
 
 # 包内数据（已经通过 pyproject.toml 的 package-data 指定，但这里也可以）
-recursive-include src/neoclip/config *.json
-recursive-include src/neoclip/data *.json
-recursive-include src/neoclip/neopen/prompt *.yaml *.yml
-recursive-include src/neoclip/flask/templates *.html
+recursive-include src/penclip/config *.json
+recursive-include src/penclip/data *.json
+recursive-include src/penclip/neopen/prompt *.yaml *.yml
+recursive-include src/penclip/flask/templates *.html
 
 # 排除不需要的
 global-exclude *.pyc

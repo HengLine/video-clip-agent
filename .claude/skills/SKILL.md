@@ -1,6 +1,6 @@
-# NeoClip Skills
+# PenClip Skills
 
-本目录包含 NeoClip 视频混剪智能体项目的全套技能文件。根目录 `CLAUDE.md` 是始终加载的项目入口，此处为按需加载的详细技能。
+本目录包含 PenClip 视频混剪智能体项目的全套技能文件。根目录 `CLAUDE.md` 是始终加载的项目入口，此处为按需加载的详细技能。
 
 ## 技能清单
 

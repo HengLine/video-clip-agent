@@ -1,6 +1,6 @@
 """CentralHub 确认门单元测试 —— 高风险操作须确认后才执行。"""
 
-from neoclip.core.hub.central_hub import CentralHub
+from penclip.core.hub.central_hub import CentralHub
 
 
 def test_high_risk_returns_confirmation_without_executing(hub_with_render):

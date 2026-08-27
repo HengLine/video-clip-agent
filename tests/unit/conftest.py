@@ -9,12 +9,12 @@ SRC = Path(__file__).resolve().parents[2] / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from neoclip.agents.base import BaseAgent
-from neoclip.core.hub.central_hub import CentralHub
-from neoclip.domain.value_objects.capability import CapabilityDeclaration
-from neoclip.domain.value_objects.execution_result import ExecutionResult
-from neoclip.domain.value_objects.intent import IntentType
-from neoclip.domain.value_objects.risk import RiskLevel
+from penclip.agents.base import BaseAgent
+from penclip.core.hub.central_hub import CentralHub
+from penclip.domain.value_objects.capability import CapabilityDeclaration
+from penclip.domain.value_objects.execution_result import ExecutionResult
+from penclip.domain.value_objects.intent import IntentType
+from penclip.domain.value_objects.risk import RiskLevel
 
 
 class RecordingRenderAgent(BaseAgent):

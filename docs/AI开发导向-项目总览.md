@@ -1,4 +1,4 @@
-# NeoClip 项目总览 — AI 开发导向
+# PenClip 项目总览 — AI 开发导向
 
 > 生成时间: 2026-08-04 | 版本: V0.1 | 分支: dev
 > 本文档为 AI 开发者视角编写，所有路径相对于项目根 `E:\Projects\neopen\video-clip-agent`
@@ -9,8 +9,8 @@
 
 | 属性 | 值 |
 |------|-----|
-| 项目名称 | NeoClip — 视频混剪智能体 |
-| 包名 | `neoclip` (PyPI: `neoclip`) |
+| 项目名称 | PenClip — 视频混剪智能体 |
+| 包名 | `penclip` (PyPI: `penclip`) |
 | 代码仓库 | `github.com/neopen/video-clip-agent` |
 | 文档站点 | `clip.pengline.cn` |
 | Python | >= 3.9 |
@@ -64,7 +64,7 @@
 
 ```
 video-clip-agent/
-├── src/neoclip/
+├── src/penclip/
 │   ├── __init__.py
 │   │
 │   ├── core/                             # 核心模块
@@ -410,13 +410,13 @@ V0.1 (当前)          V0.2              V0.3              V1.0           V2.0
 
 ### 6.1 命名空间
 
-所有 import 统一使用 `neoclip.*` 前缀。**禁止**使用 `penshot.*` / `neopen.*` / `config.*` / `utils.*` 等旧前缀。
+所有 import 统一使用 `penclip.*` 前缀。**禁止**使用 `penshot.*` / `neopen.*` / `config.*` / `utils.*` 等旧前缀。
 
 ```python
 # 正确
-from neoclip.logger import info, error
-from neoclip.config.config import settings
-from neoclip.utils.ffmpeg_utils import build_cut_command
+from penclip.logger import info, error
+from penclip.config.config import settings
+from penclip.utils.ffmpeg_utils import build_cut_command
 
 # 错误
 from penshot.logger import info
@@ -427,7 +427,7 @@ from utils.ffmpeg_utils import ...
 ### 6.2 日志
 
 ```python
-from neoclip.logger import debug, info, warning, error
+from penclip.logger import debug, info, warning, error
 # 仅用于高频/诊断型日志
 debug("...")
 # 标准业务流程
@@ -470,7 +470,7 @@ def get_my_tool() -> MyTool:
 ### 6.5 配置访问
 
 ```python
-from neoclip.config.config import settings
+from penclip.config.config import settings
 
 # API 服务器配置
 host = settings.api.host
@@ -502,12 +502,12 @@ paths = settings.get_data_paths()
 高优先级文件（修改频率最高）：
 
 - `main.py` — 启动入口
-- `src/neoclip/app/application.py` — FastAPI 应用装配
-- `src/neoclip/api/rest_api.py` — 核心业务路由 (822 lines, 最大文件)
-- `src/neoclip/api/function_calls.py` — 类型定义 + TaskFactory stub
-- `src/neoclip/config/config.py` — Settings + 默认配置
-- `src/neoclip/client/ai_client.py` — AI 统一入口
-- `src/neoclip/tools/requirement_analyzer_tool.py` — 需求解析 (V0.1 关键字, V0.2 LLM)
+- `src/penclip/app/application.py` — FastAPI 应用装配
+- `src/penclip/api/rest_api.py` — 核心业务路由 (822 lines, 最大文件)
+- `src/penclip/api/function_calls.py` — 类型定义 + TaskFactory stub
+- `src/penclip/config/config.py` — Settings + 默认配置
+- `src/penclip/client/ai_client.py` — AI 统一入口
+- `src/penclip/tools/requirement_analyzer_tool.py` — 需求解析 (V0.1 关键字, V0.2 LLM)
 - `pyproject.toml` — 依赖声明
 
 ---
@@ -543,7 +543,7 @@ python main.py --port 8000 --host 0.0.0.0
 # 在 config.json 中设置 flask.workers > 1
 
 # 验证导入
-python -c "import neoclip; print(neoclip.__version__)"
-python -c "from neoclip.config.config import settings; print(settings.api.host, settings.api.port)"
-python -c "from neoclip.app import app; print(app.title)"
+python -c "import penclip; print(penclip.__version__)"
+python -c "from penclip.config.config import settings; print(settings.api.host, settings.api.port)"
+python -c "from penclip.app import app; print(app.title)"
 ```

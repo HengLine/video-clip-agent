@@ -1,10 +1,10 @@
-# NeoClip — AI Video Mix Clipping Agent
+# PenClip — AI Video Mix Clipping Agent
 
 An AI video mix clipping system built on a **star-hub dispatch architecture**. It drives video analysis, segment matching, and automatic composition from natural language, delivering a "human-in-the-loop" creative experience through multi-agent collaboration — AI assists rather than replaces the creator.
 
 ## Architecture Overview
 
-NeoClip follows a **DDD layered architecture** with a **star-hub dispatch pattern** at the top (`CentralHub` handles command parsing → intent recognition → capability routing → agent dispatch). The first registered standard workflow is a **linear chain** (sampling → parsing → analysis → matching → composition).
+PenClip follows a **DDD layered architecture** with a **star-hub dispatch pattern** at the top (`CentralHub` handles command parsing → intent recognition → capability routing → agent dispatch). The first registered standard workflow is a **linear chain** (sampling → parsing → analysis → matching → composition).
 
 ```
 User input → CentralHub → [intent recognition → risk assessment → capability routing] → Agent execution → state update → user feedback
@@ -95,31 +95,31 @@ Once started, the interactive API docs are at http://localhost:8000/docs.
 
 ### Start the Interactive Console (primary usage)
 
-NeoClip uses the **interactive console** as its primary interface (REST async is only a fallback):
+PenClip uses the **interactive console** as its primary interface (REST async is only a fallback):
 
 ```bash
 # Interactive console (requires: pip install -e .)
-neoclip-cli                       # auto-generated session
-neoclip-cli --session my-vlog     # specify a session ID
+penclip-cli                       # auto-generated session
+penclip-cli --session my-vlog     # specify a session ID
 
 # Or via module (development)
-python -m neoclip.cli.main
+python -m penclip.cli.main
 ```
 
 The console supports three interaction modes (one-shot commands / clarification dialogue / progressive refinement) plus confirmation gates for high-risk operations:
 
 ```
-neoclip> make a travel vlog, scenery first, food in the middle
+penclip> make a travel vlog, scenery first, food in the middle
 Confirm creating a new timeline plan from this request?
 Confirm? [y/N] y
 [OK] Created timeline with 3 slot(s)
 
-neoclip> render the final video
+penclip> render the final video
 Confirm starting the final render? Cancelling mid-render may leave incomplete output.
 Confirm? [y/N] y
 [OK] Video rendered to data/output/output.mp4
 
-neoclip> exit
+penclip> exit
 ```
 
 > See the [console usage guide](docs/视频混剪智能体-控制台使用指南.md) (Chinese) for full details.
@@ -183,7 +183,7 @@ curl http://localhost:8000/api/v1/tasks/{task_id}/result
 See [`.claude/skills/project.md`](.claude/skills/project.md) for the full structure; brief overview:
 
 ```
-src/neoclip/
+src/penclip/
 ├── domain/          # Domain layer: entities / value_objects / repositories (zero deps)
 ├── core/            # Application layer: hub / orchestration / state / event
 ├── agents/          # Agents: BaseAgent + Planner/Analyzer/Matcher/Composer
@@ -229,7 +229,7 @@ ruff check src/ tests/
 ruff check --fix src/ tests/
 
 # Type checking
-mypy src/neoclip
+mypy src/penclip
 
 # Run tests
 pytest
