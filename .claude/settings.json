@@ -1,0 +1,22 @@
+{
+  "enabledPlugins": {
+    "code-review@claude-plugins-official": true,
+    "claude-md-management@claude-plugins-official": true,
+    "claude-code-setup@claude-plugins-official": true
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python scripts/claude/commit_context.py",
+            "timeout": 10,
+            "statusMessage": "Loading project skill constraints before commit"
+          }
+        ]
+      }
+    ]
+  }
+}

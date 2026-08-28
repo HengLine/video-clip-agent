@@ -1,15 +1,15 @@
 # PenClip Skills
 
-本目录包含 PenClip 视频混剪智能体项目的全套技能文件。根目录 `CLAUDE.md` 是始终加载的项目入口，此处为按需加载的详细技能。
+本目录保存按需阅读的项目参考文档。根目录 `CLAUDE.md` 负责最小项目上下文与硬性约定；本文档用于选择更详细的专题文档。
 
-## 技能清单
+## 选择指南
 
 | 技能文件             | 技能名称         | 用途                                 |
 | :------------------- | :--------------- | :----------------------------------- |
 | `project.md`         | 项目知识         | DDD 分层架构、目录结构、领域模型、中枢分发、V0.1 实现/Stub 状态、版本路线 |
 | `code-standards.md`  | 代码规范         | 分层依赖、dataclass/Pydantic、类型注解、命名、导入、日志 |
 | `validation.md`      | 代码校验         | pre-commit、ruff、black、mypy、pytest |
-| `agent-development.md` | 智能体开发    | BaseAgent、能力注册、意图类型、AI 客户端、服务层、FFmpeg |
+| `agent-development.md` | 智能体开发       | BaseAgent、能力注册、意图类型、LLM 客户端、服务层、工作流集成 |
 
 ## 使用方式
 

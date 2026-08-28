@@ -10,7 +10,6 @@ eggs/
 
 # Virtual environments
 .venv/
-.claude/
 venv/
 env/
 .env/
@@ -25,6 +24,7 @@ env/
 .classpath
 .factorypath
 .project
+settings.local.json
 
 # OS
 .DS_Store
