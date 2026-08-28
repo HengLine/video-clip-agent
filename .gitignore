@@ -24,7 +24,6 @@ env/
 .classpath
 .factorypath
 .project
-settings.json
 settings.local.json
 
 # OS

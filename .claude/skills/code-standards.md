@@ -1,6 +1,6 @@
 ---
 name: code-standards
-description: PenClip Python coding standards — typing, Pydantic, naming, imports, patterns. Use when writing, reviewing, or refactoring any Python code in this project.
+description: PenClip Python 编码规范——分层依赖、类型、Pydantic、命名、导入、日志和错误处理。编写、审查或重构 Python 代码时使用；检查命令见 validation.md。
 type: reference
 ---
 

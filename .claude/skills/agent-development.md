@@ -1,6 +1,6 @@
 ---
 name: agent-development
-description: PenClip agent and tool development — BaseAgent pattern, capability registration, intent types, AI client usage, services, and workflow integration. Use when adding a new agent, tool, capability, or service.
+description: PenClip 智能体与能力开发——BaseAgent、能力注册、意图类型、LLM 客户端、服务层和工作流集成。新增或修改 Agent、工具、能力或服务时使用。
 type: reference
 ---
 
@@ -147,10 +147,10 @@ class ExecutionContext:
 
 > 注意：`agents/planner_agent.py` 是 Bridge 转发模块（`from penclip.agents.planner import ...`），真实实现在 `agents/planner.py`。`application.py` 的启动钩子仍通过旧路径 `planner_agent` 导入，故保留。
 
-## 使用 AI 客户端（遗留 `client/`，仍在使用）
+## 使用 AI 客户端（`llm/`）
 
 ```python
-from penclip.client.ai_client import AIClient, global_ai_client
+from penclip.llm.ai_client import AIClient, global_ai_client
 
 client = global_ai_client                       # 或 AIClient()
 client.set_provider("qwen")                     # openai | qwen | deepseek | ollama
@@ -159,11 +159,11 @@ config = client.generate_video_config("视频配置描述")
 ```
 
 添加新 provider：
-1. 创建 `src/penclip/client/{provider}_client.py`，继承 `BaseAIClient`
+1. 创建 `src/penclip/llm/{provider}_client.py`，继承 `BaseAIClient`
 2. 实现 `create_chat_completion` / 响应转换
 3. 在 `client_factory.py` 工厂方法注册
 
-> V0.2 起 LLM 调用将统一走 `services/llm_service.py`（策略模式，`LLMService` 接口 + 各实现 + `LLMFactory`），`client/` 将逐步退役。新代码优先考虑 `services/llm_service`。
+> 当前 LLM 客户端实现位于 `llm/`；新增 provider 应优先扩展该目录，并通过 `client_factory.py` 注册。`client/` 仅作为历史导入路径或迁移兼容层处理，除非现有调用链明确要求，不要在其中新增逻辑。
 
 ## 服务层（`services/`）
 

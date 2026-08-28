@@ -1,6 +1,6 @@
 ---
 name: validation
-description: PenClip code quality and validation — pre-commit hooks, ruff, black, mypy, pytest. Use when running checks, fixing lint errors, or setting up quality gates.
+description: PenClip 代码质量校验——black、ruff、mypy、pytest 与 pre-commit。新增或修改 Python 代码、修复检查错误、提交前验证时使用。
 type: reference
 ---
 
@@ -15,6 +15,12 @@ type: reference
 | mypy        | 类型检查       | `pyproject.toml`       |
 | pytest      | 测试           | `pyproject.toml`       |
 | pre-commit  | Git 钩子       | `.pre-commit-config.yaml` |
+
+## 使用边界
+
+- 本文档只描述仓库当前可执行的代码检查与测试命令。
+- 工具版本、规则和路径以 `pyproject.toml` 为准；文档示例不应替代配置文件。
+- 测试代码位于 `tests/`，源码采用 `src/penclip` 布局。
 
 ## 快速命令
 
@@ -38,7 +44,7 @@ pytest
 pytest --cov=penclip --cov-report=term-missing
 
 # 运行指定的测试
-pytest tests/test_video_metadata.py -v
+pytest tests/unit/test_intent.py -v
 
 # 跳过慢测试
 pytest -m "not slow"
@@ -128,30 +134,29 @@ python_files = "test_*.py"
 - `integration`：集成测试
 - `gpu`：需要 GPU 的测试
 
-**测试目录结构**（按 DDD 分层，规划自 `docs/视频混剪智能体-设计原则.md`）：
-```
+**测试目录结构**
+
+测试按职责组织；以仓库当前目录为准，新增测试优先放入对应层级：
+
+```text
 tests/
-├── unit/
-│   ├── core/        # hub / orchestration / state / event
-│   ├── agents/      # BaseAgent + 各 Agent
-│   ├── domain/      # entities / value_objects / repositories
-│   └── services/
-├── integration/
-├── e2e/
-└── fixtures/
+├── api/                 # API 路由与接口行为
+└── unit/                # 领域、核心逻辑、Agent、CLI 等单元测试
 ```
 
-> 注意：当前 `tests/` 目录为空，测试用例是 V0.2 待办（见 `docs/AI开发导向-项目总览.md` §9）。新增测试请按上述分层组织。
+当前已有 `api/` 和 `unit/` 测试；不要依据文档假设测试目录为空。
 
-## CI/CD 检查清单
+## 提交前检查清单
 
-每次提交前应通过：
+根据变更范围执行以下检查：
 
-- [ ] `black --check src/ tests/` 通过
-- [ ] `ruff check src/ tests/` 无错误
-- [ ] `mypy src/penclip` 无新增错误
-- [ ] `pytest` 全部通过
-- [ ] `pre-commit run --all-files` 通过
+- [ ] `black --check src/ tests/`
+- [ ] `ruff check src/ tests/`
+- [ ] `mypy src/penclip`
+- [ ] `pytest`
+- [ ] `pre-commit run --all-files`
+
+`pytest` 已由 `pyproject.toml` 配置覆盖率报告；无需在文档中重复拼接覆盖率参数。
 
 ## 项目配置文件清单
 

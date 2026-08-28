@@ -1,6 +1,6 @@
 ---
 name: project
-description: PenClip project knowledge — DDD layered architecture, directory structure, domain model, hub dispatch flow, V0.1 implemented-vs-stub status, and version roadmap. Use when understanding project context, making architectural decisions, or onboarding.
+description: PenClip 项目知识——DDD 分层架构、目录结构、领域模型、中枢分发流程和版本路线。理解项目上下文或进行架构决策时使用；具体编码和校验规则分别见 code-standards.md 与 validation.md。
 type: project
 ---
 
@@ -154,7 +154,7 @@ src/penclip/
 - **值对象用 dataclass，实体用 Pydantic**（区分「无行为的小对象」与「需校验/序列化的聚合」）
 - **Bridge 层**：`hub/`/`graph/`/`state/` 顶层模块为兼容转发，真实实现下沉到 `core/`/`domain/`
 - **意图识别 V0.1 关键词匹配**，V0.2 升级 LLM；**图编排 V0.1 stub**，V0.2 接入 LangGraph
-- **遗留层共存**：`client/`/`tools/`/`utils/`/`config/`/`logger.py` 仍在使用，逐步迁移到 `services/`/`infrastructure/`
+- **遗留层共存**：`llm/`（多 AI 提供商）、`tools/`/`utils/`/`config/`/`logger.py` 仍在使用，逐步迁移到对应服务与基础设施实现
 
 ## 技术栈
 
